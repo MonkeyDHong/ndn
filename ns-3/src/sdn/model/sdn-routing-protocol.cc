@@ -88,11 +88,20 @@ NS_LOG_COMPONENT_DEFINE ("SdnRoutingProtocol");
 
 NS_OBJECT_ENSURE_REGISTERED (RoutingProtocol);
 
+TypeId
+RoutingProtocol::GetTypeId ()
+{
+  static TypeId tid = TypeId ("ns3::sdn::RoutingProtocol");
+  return tid;
+}
+
 
 RoutingProtocol::RoutingProtocol ()
   : m_ipv4 (0),
     m_helloTimer (Timer::CANCEL_ON_DESTROY),
-    m_queuedMessagesTimer (Timer::CANCEL_ON_DESTROY)
+    m_queuedMessagesTimer (Timer::CANCEL_ON_DESTROY),
+    m_packetSequenceNumber (SDN_MAX_SEQ_NUM),
+    m_messageSequenceNumber (SDN_MAX_SEQ_NUM)
 {
   m_uniformRandomVariable = CreateObject<UniformRandomVariable> ();
 }
@@ -323,6 +332,14 @@ RoutingProtocol::RecvSDN (Ptr<Socket> socket)
           ProcessRm (messageHeader);
           break;
 
+        case sdn::MessageHeader::HELLO_MESSAGE:
+          NS_LOG_DEBUG (Simulator::Now ().GetSeconds ()
+                        << "s SDN node " << m_mainAddress
+                        << " received Routing message of size "
+                        << messageHeader.GetSerializedSize ());
+          //Car Node should discare Hello_Message
+          break;
+
         default:
           NS_LOG_DEBUG ("SDN message type " <<
                         int (messageHeader.GetMessageType ()) <<
@@ -355,9 +372,9 @@ RoutingProtocol::ProcessRm (const sdn::MessageHeader &msg)
   {
 
     AddEntry(it->destAddress,
-	     it->mask,
-	     it->nextHop,
-	     0);
+             it->mask,
+             it->nextHop,
+             0);
   }
 
 }
@@ -371,9 +388,9 @@ RoutingProtocol::Clear()
 
 void
 RoutingProtocol::AddEntry (const Ipv4Address &dest,
-		           const Ipv4Address &mask,
-		           const Ipv4Address &next,
-			   uint32_t interface)
+                           const Ipv4Address &mask,
+                           const Ipv4Address &next,
+                           uint32_t interface)
 {
   NS_LOG_FUNCTION(this << dest << next << interface << mask << m_mainAddress);
   RoutingTableEntry RTE;
@@ -386,9 +403,9 @@ RoutingProtocol::AddEntry (const Ipv4Address &dest,
 
 void
 RoutingProtocol::AddEntry (const Ipv4Address &dest,
-		           const Ipv4Address &mask,
-		           const Ipv4Address &next,
-		           const Ipv4Address &interfaceAddress)
+                           const Ipv4Address &mask,
+                           const Ipv4Address &next,
+                           const Ipv4Address &interfaceAddress)
 {
   NS_LOG_FUNCTION(this << dest << next << interfaceAddress << mask << m_mainAddress);
 
@@ -398,10 +415,10 @@ RoutingProtocol::AddEntry (const Ipv4Address &dest,
    for (uint32_t j = 0; j< m_ipv4->GetNAddresses(i); j++)
      {
        if (m_ipv4->GetAddress(i,j).GetLocal() == interfaceAddress)
-	 {
-	   AddEntry(dest, mask, next, i);
-	   return;
-	 }
+         {
+           AddEntry(dest, mask, next, i);
+           return;
+         }
      }
   NS_ASSERT(false);
   AddEntry(dest, mask, next, 0);
@@ -409,18 +426,398 @@ RoutingProtocol::AddEntry (const Ipv4Address &dest,
 
 bool
 RoutingProtocol::Lookup(Ipv4Address const &dest,
-			Ipv4Address const &mask,
                         RoutingTableEntry &outEntry) const
 {
   std::map<Ipv4Address, RoutingTableEntry>::const_iterator it =
     m_table.find(dest);
-  if (it == m_table.end())
-    return (false);
-  outEntry = it->second;
-  return (true);
+  if (it != m_table.end())
+    {
+      outEntry = it->second;
+      return true;
+    }
+  else
+    {
+      Ipv4Mask MaskTemp;
+      uint16_t max_prefix;
+      bool max_prefix_meaningful = false;
+      for (it = m_table.begin();it!=m_table.end(); it++)
+        {
+          MaskTemp.Set (it->second.mask.Get ());
+          if (MaskTemp.IsMatch (dest, it->second.destAddr))
+            {
+              if (!max_prefix_meaningful)
+                {
+                  max_prefix_meaningful = true;
+                  max_prefix = MaskTemp.GetPrefixLength ();
+                  outEntry = it->second;
+                }
+              if (max_prefix_meaningful && (max_prefix < MaskTemp.GetPrefixLength ()))
+                {
+                  max_prefix = MaskTemp.GetPrefixLength ();
+                  outEntry = it->second;
+                }
+            }
+        }
+      if (max_prefix_meaningful)
+        return true;
+      else
+        return false;
+    }
+
+}
+
+void
+RoutingProtocol::RemoveEntry (Ipv4Address const &dest)
+{
+  m_table.erase (dest);
 }
 
 
+bool
+RoutingProtocol::RouteInput(Ptr<const Packet> p,
+                            const Ipv4Header &header,
+                            Ptr<const NetDevice> idev,
+                            UnicastForwardCallback ucb,
+                            MulticastForwardCallback mcb,
+                            LocalDeliverCallback lcb,
+                            ErrorCallback ecb)
+{
+  NS_LOG_FUNCTION (this << " " << m_ipv4->GetObject<Node> ()->GetId () << " " << header.GetDestination ());
+
+  Ipv4Address dest = header.GetDestination();
+  Ipv4Address sour = header.GetSource();
+
+  // Consume self-originated packets
+  if (IsMyOwnAddress (sour) == true)
+    {
+      return true;
+    }
+
+  // Local delivery
+  NS_ASSERT (m_ipv4->GetInterfaceForDevice (idev) >= 0);
+  uint32_t iif = m_ipv4->GetInterfaceForDevice (idev);
+  if (m_ipv4->IsDestinationAddress (dest, iif))
+    {
+      if (!lcb.IsNull ())
+        {
+          NS_LOG_LOGIC ("Local delivery to " << dest);
+          lcb (p, header, iif);
+          return true;
+        }
+      else
+        {
+          // The local delivery callback is null.  This may be a multicast
+          // or broadcast packet, so return false so that another
+          // multicast routing protocol can handle it.  It should be possible
+          // to extend this to explicitly check whether it is a unicast
+          // packet, and invoke the error callback if so
+          return false;
+        }
+    }
+
+  // Forwarding
+  Ptr<Ipv4Route> rtentry;
+  RoutingTableEntry entry;
+  if (Lookup (header.GetDestination (), entry))
+    {
+      rtentry = Create<Ipv4Route> ();
+      rtentry->SetDestination (dest);
+      uint32_t interfaceIdx = entry.interface;
+      NS_ASSERT (m_ipv4);
+      uint32_t numOfifAddress = m_ipv4->GetNAddresses (interfaceIdx);
+      NS_ASSERT (numOfifAddress > 0);
+      Ipv4InterfaceAddress ifAddr;
+      if (numOfifAddress == 1) {
+          ifAddr = m_ipv4->GetAddress (interfaceIdx, 0);
+        }else{
+            // One Interface should only had one address.
+            NS_FATAL_ERROR ("Interface had more than one address");
+        }
+      rtentry->SetSource (ifAddr.GetLocal ());
+      rtentry->SetGateway (entry.nextHop);
+      rtentry->SetOutputDevice (m_ipv4->GetNetDevice (interfaceIdx));
+
+      NS_LOG_DEBUG ("SDN node " << m_mainAddress
+                                 << ": RouteInput for dest=" << header.GetDestination ()
+                                 << " --> nextHop=" << entry.nextHop
+                                 << " interface=" << entry.interface);
+
+      ucb (rtentry, p, header);
+      return true;
+    }
+  else
+    {
+      //Fail
+      return false;
+    }
+
+}
+
+void
+RoutingProtocol::NotifyInterfaceUp (uint32_t i)
+{}
+void
+RoutingProtocol::NotifyInterfaceDown (uint32_t i)
+{}
+void
+RoutingProtocol::NotifyAddAddress (uint32_t interface, Ipv4InterfaceAddress address)
+{}
+void
+RoutingProtocol::NotifyRemoveAddress (uint32_t interface, Ipv4InterfaceAddress address)
+{}
+
+Ptr<Ipv4Route>
+RoutingProtocol::RouteOutput (Ptr<Packet> p,
+             const Ipv4Header &header,
+             Ptr<NetDevice> oif,
+             Socket::SocketErrno &sockerr)
+{
+  NS_LOG_FUNCTION (this << " " << m_ipv4->GetObject<Node> ()->GetId () << " " << header.GetDestination () << " " << oif);
+  Ptr<Ipv4Route> rtentry;
+  RoutingTableEntry entry;
+
+  if (Lookup (header.GetDestination (), entry))
+    {
+      uint32_t interfaceIdx = entry.interface;
+      if (oif && m_ipv4->GetInterfaceForDevice (oif) != static_cast<int> (interfaceIdx))
+        {
+          // We do not attempt to perform a constrained routing search
+          // if the caller specifies the oif; we just enforce that
+          // that the found route matches the requested outbound interface
+          NS_LOG_DEBUG ("SDN node " << m_mainAddress
+                                     << ": RouteOutput for dest=" << header.GetDestination ()
+                                     << " Route interface " << interfaceIdx
+                                     << " does not match requested output interface "
+                                     << m_ipv4->GetInterfaceForDevice (oif));
+          sockerr = Socket::ERROR_NOROUTETOHOST;
+          return rtentry;
+        }
+      rtentry = Create<Ipv4Route> ();
+      rtentry->SetDestination (header.GetDestination ());
+      // the source address is the interface address that matches
+      // the destination address (when multiple are present on the
+      // outgoing interface, one is selected via scoping rules)
+      NS_ASSERT (m_ipv4);
+      uint32_t numOifAddresses = m_ipv4->GetNAddresses (interfaceIdx);
+      NS_ASSERT (numOifAddresses > 0);
+      Ipv4InterfaceAddress ifAddr;
+      if (numOifAddresses == 1) {
+          ifAddr = m_ipv4->GetAddress (interfaceIdx, 0);
+        } else {
+          /// \todo Implment IP aliasing and OLSR
+          NS_FATAL_ERROR ("XXX Not implemented yet:  IP aliasing and OLSR");
+        }
+      rtentry->SetSource (ifAddr.GetLocal ());
+      rtentry->SetGateway (entry.nextHop);
+      rtentry->SetOutputDevice (m_ipv4->GetNetDevice (interfaceIdx));
+      sockerr = Socket::ERROR_NOTERROR;
+      NS_LOG_DEBUG ("SDN node " << m_mainAddress
+                                 << ": RouteOutput for dest=" << header.GetDestination ()
+                                 << " --> nextHop=" << entry.nextHop
+                                 << " interface=" << entry.interface);
+      NS_LOG_DEBUG ("Found route to " << rtentry->GetDestination () << " via nh " << rtentry->GetGateway () << " with source addr " << rtentry->GetSource () << " and output dev " << rtentry->GetOutputDevice ());
+    }
+  else
+    {
+      NS_LOG_DEBUG ("SDN node " << m_mainAddress
+                                 << ": RouteOutput for dest=" << header.GetDestination ()
+                                 << " No route to host");
+      sockerr = Socket::ERROR_NOROUTETOHOST;
+    }
+  return rtentry;
+}
+
+void
+RoutingProtocol::Dump ()
+{
+#ifdef NS3_LOG_ENABLE
+  NS_LOG_DEBUG ("Dumpping For" << m_mainAddress);
+#endif //NS3_LOG_ENABLE
+}
+
+std::vector<RoutingTableEntry>
+RoutingProtocol::GetRoutingTableEntries () const
+{
+  std::vector<RoutingTableEntry> rtvt;
+  for (std::map<Ipv4Address, RoutingTableEntry>::const_iterator it = m_table.begin ();
+       it != m_table.end (); it++)
+    {
+      rtvt.push_back (it->second);
+    }
+  return rtvt;
+}
+
+int64_t
+RoutingProtocol::AssignStreams (int64_t stream)
+{
+  NS_LOG_FUNCTION (this << stream);
+  m_uniformRandomVariable->SetStream (stream);
+  return 1;
+}
+
+void
+RoutingProtocol::PrintRoutingTable (Ptr<OutputStreamWrapper> stream) const
+{
+  std::ostream* os = stream->GetStream ();
+  *os << "Destination\t\tMask\t\tNextHop\t\tInterface\n";
+
+  for (std::map<Ipv4Address, RoutingTableEntry>::const_iterator iter = m_table.begin ();
+       iter != m_table.end (); iter++)
+    {
+      *os << iter->first << "\t\t";
+      *os << iter->second.mask << "\t\t";
+      *os << iter->second.nextHop << "\t\t";
+      if (Names::FindName (m_ipv4->GetNetDevice (iter->second.interface)) != "")
+        {
+          *os << Names::FindName (m_ipv4->GetNetDevice (iter->second.interface));
+        }
+      else
+        {
+          *os << iter->second.interface;
+        }
+      *os << "\n";
+    }
+}
+
+uint16_t
+RoutingProtocol::GetPacketSequenceNumber ()
+{
+  m_packetSequenceNumber = (m_packetSequenceNumber + 1) % (SDN_MAX_SEQ_NUM + 1);
+  return m_packetSequenceNumber;
+}
+
+
+uint16_t
+RoutingProtocol::GetMessageSequenceNumber ()
+{
+  m_messageSequenceNumber = (m_messageSequenceNumber + 1) % (SDN_MAX_SEQ_NUM + 1);
+  return m_messageSequenceNumber;
+}
+
+void
+RoutingProtocol::HelloTimerExpire ()
+{
+  SendHello ();
+  m_helloTimer.Schedule (m_helloInterval);
+}
+
+void
+RoutingProtocol::SendPacket (Ptr<Packet> packet,
+                             const MessageList &containedMessages)
+{
+  NS_LOG_DEBUG ("SDN node " << m_mainAddress << " sending a SDN packet");
+
+  // Add a header
+  sdn::PacketHeader header;
+  header.SetPacketLength (header.GetSerializedSize () + packet->GetSize ());
+  header.SetPacketSequenceNumber (GetPacketSequenceNumber ());
+  packet->AddHeader (header);
+
+  // Trace it
+  m_txPacketTrace (header, containedMessages);
+
+  // Send it
+  for (std::map<Ptr<Socket>, Ipv4InterfaceAddress>::const_iterator i =
+         m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
+    {
+      Ipv4Address bcast = i->second.GetLocal ().GetSubnetDirectedBroadcast (i->second.GetMask ());
+      i->first->SendTo (packet, 0, InetSocketAddress (bcast, SDN_PORT_NUMBER));
+    }
+}
+
+void
+RoutingProtocol::QueueMessage (const sdn::MessageHeader &message, Time delay)
+{
+  m_queuedMessages.push_back (message);
+  if (not m_queuedMessagesTimer.IsRunning ())
+    {
+      m_queuedMessagesTimer.SetDelay (delay);
+      m_queuedMessagesTimer.Schedule ();
+    }
+}
+
+
+// NS3 is not multithread, so mutex is unnecessary.
+void
+RoutingProtocol::SendQueuedMessages ()
+{
+  Ptr<Packet> packet = Create<Packet> ();
+  int numMessages = 0;
+
+  NS_LOG_DEBUG ("SDN node " << m_mainAddress << ": SendQueuedMessages");
+
+  MessageList msglist;
+
+  for (std::vector<sdn::MessageHeader>::const_iterator message = m_queuedMessages.begin ();
+       message != m_queuedMessages.end ();
+       message++)
+    {
+      Ptr<Packet> p = Create<Packet> ();
+      p->AddHeader (*message);
+      packet->AddAtEnd (p);
+      msglist.push_back (*message);
+      if (++numMessages == SDN_MAX_MSGS)
+        {
+          SendPacket (packet, msglist);
+          msglist.clear ();
+          // Reset variables for next packet
+          numMessages = 0;
+          packet = Create<Packet> ();
+        }
+    }
+
+  if (packet->GetSize ())
+    {
+      SendPacket (packet, msglist);
+    }
+
+  m_queuedMessages.clear ();
+}
+
+bool
+RoutingProtocol::IsMyOwnAddress (const Ipv4Address & a) const
+{
+  for (std::map<Ptr<Socket>, Ipv4InterfaceAddress>::const_iterator j =
+         m_socketAddresses.begin (); j != m_socketAddresses.end (); ++j)
+    {
+      Ipv4InterfaceAddress iface = j->second;
+      if (a == iface.GetLocal ())
+        {
+          return true;
+        }
+    }
+  return false;
+}
+
+void
+RoutingProtocol::SendHello ()
+{
+  NS_LOG_FUNCTION (this);
+  sdn::MessageHeader msg;
+  Time now = Simulator::Now ();
+  msg.SetVTime (m_helloInterval);//Useless now.
+  msg.SetTimeToLive (41993);//Just MY Birthday.
+  msg.SetMessageSequenceNumber (GetMessageSequenceNumber ());
+  msg.SetMessageType (sdn::MessageHeader::HELLO_MESSAGE);
+
+  sdn::MessageHeader::Hello &hello = msg.GetHello ();
+  hello.ID = m_mainAddress;
+  Vector pos = m_mobility->GetPosition ();
+  Vector vel = m_mobility->GetVelocity ();
+  hello.SetPosition (pos.x, pos.y, pos.z);
+  hello.SetVelocity (vel.x, vel.y, vel.z);
+
+  NS_LOG_DEBUG ( "SDN HELLO_MESSAGE sent by node: " << hello.ID
+                 << "   at " << now.GetSeconds() << "s");
+
+  QueueMessage (msg, JITTER);
+}
+
+void
+RoutingProtocol::SetMobility (Ptr<MobilityModel> mobility)
+{
+  m_mobility = mobility;
+}
 
 
 } // namespace sdn
