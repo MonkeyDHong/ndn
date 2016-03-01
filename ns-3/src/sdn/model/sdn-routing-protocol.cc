@@ -91,7 +91,9 @@ NS_OBJECT_ENSURE_REGISTERED (RoutingProtocol);
 TypeId
 RoutingProtocol::GetTypeId ()
 {
-  static TypeId tid = TypeId ("ns3::sdn::RoutingProtocol");
+  static TypeId tid = TypeId ("ns3::sdn::RoutingProtocol")
+    .SetParent<Ipv4RoutingProtocol> ()
+    .AddConstructor<RoutingProtocol> ();
   return tid;
 }
 
@@ -103,7 +105,7 @@ RoutingProtocol::RoutingProtocol ()
     m_ipv4 (0),
     m_helloTimer (Timer::CANCEL_ON_DESTROY),
     m_queuedMessagesTimer (Timer::CANCEL_ON_DESTROY),
-    m_isCar (false)
+    m_nodetype (OTHERS)
 {
   m_uniformRandomVariable = CreateObject<UniformRandomVariable> ();
 }
@@ -315,7 +317,7 @@ RoutingProtocol::RecvSDN (Ptr<Socket> socket)
       // If ttl is less than or equal to zero, or
       // the receiver is the same as the originator,
       // the message must be silently dropped
-      if (messageHeader.GetTimeToLive () == 0)
+      if ((messageHeader.GetTimeToLive () == 0)||(IsMyOwnAddress (sdnPacketHeader.originator)))
         {
           // swallow it
           packet->RemoveAtStart (messageHeader.GetSerializedSize ());
@@ -331,7 +333,7 @@ RoutingProtocol::RecvSDN (Ptr<Socket> socket)
                         << " received Routing message of size " 
                         << messageHeader.GetSerializedSize ());
           //Controller Node should discare Hello_Message
-          if (IsCar ())
+          if (GetType() == CAR)
             ProcessRm (messageHeader);
           break;
 
@@ -341,7 +343,7 @@ RoutingProtocol::RecvSDN (Ptr<Socket> socket)
                         << " received Routing message of size "
                         << messageHeader.GetSerializedSize ());
           //Car Node should discare Hello_Message
-          if (IsController ())
+          if (GetType() == LOCAL_CONTROLLER)
             ProcessHM (messageHeader);
           break;
 
@@ -363,25 +365,29 @@ RoutingProtocol::ProcessRm (const sdn::MessageHeader &msg)
   NS_LOG_FUNCTION (msg);
   
   const sdn::MessageHeader::Rm &rm = msg.GetRm();
-  Time now = Simulator::Now();
-  NS_LOG_DEBUG ("@" << now.GetSeconds() << ":Node " << m_mainAddress
-                << "ProcessRm.");
-  
-  NS_ASSERT (rm.GetRoutingMessageSize() >= 0);
-  
-  Clear();
-  
-  for (std::vector<sdn::MessageHeader::Rm::Routing_Tuple>::const_iterator it = rm.routingTables.begin();
-        it != rm.routingTables.end();
-        it++)
-  {
+  // Check if this rm is for me
+  // Ignore rm that ID does not match.
+  if (IsMyOwnAddress (rm.ID))
+    {
+      Time now = Simulator::Now();
+      NS_LOG_DEBUG ("@" << now.GetSeconds() << ":Node " << m_mainAddress
+                    << "ProcessRm.");
 
-    AddEntry(it->destAddress,
-             it->mask,
-             it->nextHop,
-             0);
-  }
+      NS_ASSERT (rm.GetRoutingMessageSize() >= 0);
 
+      Clear();
+
+      for (std::vector<sdn::MessageHeader::Rm::Routing_Tuple>::const_iterator it = rm.routingTables.begin();
+            it != rm.routingTables.end();
+            it++)
+      {
+
+        AddEntry(it->destAddress,
+                 it->mask,
+                 it->nextHop,
+                 0);
+      }
+    }
 }
 
 void
@@ -678,13 +684,15 @@ RoutingProtocol::GetMessageSequenceNumber ()
 void
 RoutingProtocol::HelloTimerExpire ()
 {
-  if (IsCar ())
+  if (GetType() == CAR)
     {
       SendHello ();
       m_helloTimer.Schedule (m_helloInterval);
     }
 }
 
+
+// SDN packets actually send here.
 void
 RoutingProtocol::SendPacket (Ptr<Packet> packet,
                              const MessageList &containedMessages)
@@ -693,6 +701,7 @@ RoutingProtocol::SendPacket (Ptr<Packet> packet,
 
   // Add a header
   sdn::PacketHeader header;
+  header.originator = this->m_mainAddress;
   header.SetPacketLength (header.GetSerializedSize () + packet->GetSize ());
   header.SetPacketSequenceNumber (GetPacketSequenceNumber ());
   packet->AddHeader (header);
@@ -722,6 +731,8 @@ RoutingProtocol::QueueMessage (const sdn::MessageHeader &message, Time delay)
 
 
 // NS3 is not multithread, so mutex is unnecessary.
+// Here, messages will queue up and send once numMessage is equl to SDN_MAX_MSGS.
+// This function will NOT add a header to each message
 void
 RoutingProtocol::SendQueuedMessages ()
 {
@@ -804,28 +815,15 @@ RoutingProtocol::SetMobility (Ptr<MobilityModel> mobility)
 }
 
 void
-RoutingProtocol::SetType(NodeType nt)
+RoutingProtocol::SetType (NodeType nt)
 {
-  if (nt == CAR)
-    {
-      m_isCar = true;
-    }
-  else
-    {
-      m_isCar = false;
-    }
+  m_nodetype = nt;
 }
 
-bool
-RoutingProtocol::IsCar() const
+NodeType
+RoutingProtocol::GetType () const
 {
-  return m_isCar;
-}
-
-bool
-RoutingProtocol::IsController() const
-{
-  return !m_isCar;
+  return m_nodetype;
 }
 
 void

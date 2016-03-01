@@ -41,6 +41,8 @@ uint32_t  IEEE754 (float dec);
 //        0                   1                   2                   3
 //        0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 //       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//       |                          originator                           |
+//       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 //       |         Packet Length         |    Packet Sequence Number     |
 //       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 //       |  Message Type |     Vtime     |         Message Size          |
@@ -66,6 +68,8 @@ class PacketHeader : public Header
 public:
   PacketHeader ();
   virtual ~PacketHeader ();
+
+  Ipv4Address originator;
 
   void SetPacketLength (uint16_t length)
   {
@@ -256,13 +260,16 @@ public:
   };
 
   //  Routing Message Format
-  //
+  //    One RM is for one car only.
+  //    But one car may need multiple RM to form proper routing table.
   //    The proposed format of a routing message is as follows:
   //
   //        0                   1                   2                   3
   //        0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
   //       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
   //       |                     Routing Message Size                      |
+  //       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  //       |                      sourceAddress(ID)                        |
   //       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
   //       |                          destAddress                          |
   //       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -278,7 +285,7 @@ public:
   //       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
   //       :                                                               :
   //       :                               :
-
+  //   ID is the car's ID of this routing table.
   struct Rm
   {
     struct Routing_Tuple{
@@ -295,6 +302,7 @@ public:
       return (this->routingMessageSize);
     }
     
+    Ipv4Address ID;
     
     std::vector<Routing_Tuple> routingTables;
     

@@ -26,10 +26,10 @@
 #include "sdn-header.h"
 
 #define IPV4_ADDRESS_SIZE 4
+#define SDN_PKT_HEADER_SIZE 8
 #define SDN_MSG_HEADER_SIZE 8
-#define SDN_PKT_HEADER_SIZE 4
 #define SDN_HELLO_HEADER_SIZE 28
-#define SDN_RM_HEADER_SIZE 4
+#define SDN_RM_HEADER_SIZE 8
 #define SDN_RM_TUPLE_SIZE 3
 
 NS_LOG_COMPONENT_DEFINE ("SdnHeader");
@@ -103,6 +103,7 @@ void
 PacketHeader::Serialize (Buffer::Iterator start) const
 {
   Buffer::Iterator i = start;
+  i.WriteHtonU32 (this->originator.Get());
   i.WriteHtonU16 (m_packetLength);
   i.WriteHtonU16 (m_packetSequenceNumber);
 }
@@ -111,6 +112,8 @@ uint32_t
 PacketHeader::Deserialize (Buffer::Iterator start)
 {
   Buffer::Iterator i = start;
+  uint32_t add_temp = i.ReadNtohU32();
+  this->originator.Set(add_temp);
   m_packetLength  = i.ReadNtohU16 ();
   m_packetSequenceNumber = i.ReadNtohU16 ();
   return (GetSerializedSize ());
@@ -295,6 +298,7 @@ MessageHeader::Rm::Serialize (Buffer::Iterator start) const
   Buffer::Iterator i = start;
 
   i.WriteHtonU32 (this->routingMessageSize);
+  i.WriteHtonU32 (this->ID.Get());
 
   for (std::vector<Routing_Tuple>::const_iterator iter = 
     this->routingTables.begin (); 
@@ -317,6 +321,8 @@ MessageHeader::Rm::Deserialize (Buffer::Iterator start,
   NS_ASSERT (messageSize >= SDN_RM_HEADER_SIZE);
 
   this->routingMessageSize = i.ReadNtohU32 ();
+  uint32_t add_temp = i.ReadNtohU32();
+  this->ID.Set(add_temp);
 
   NS_ASSERT ((messageSize - SDN_RM_HEADER_SIZE) % 
     (IPV4_ADDRESS_SIZE * SDN_RM_TUPLE_SIZE) == 0);
