@@ -59,12 +59,13 @@ struct RoutingTableEntry
 };
 
 // A struct for LC to hold Information that got from cars
-struct CarStatus
+struct CarInfo
 {
   Vector3D Position;
   Vector3D Velocity;
   Time LastActive;//Timeout indicator
   bool Active;
+  std::vector<RoutingTableEntry> R_Table;
 };
 
 class RoutingProtocol;
@@ -123,9 +124,7 @@ protected:
 private:
   std::map<Ipv4Address, RoutingTableEntry> m_table; ///< Data structure for the routing table. (Use By Mainly by CAR Node, but LC needs it too)
 
-  std::map<Ipv4Address, std::vector<RoutingTableEntry> > m_lc_table;/// For LC
-
-  std::map<Ipv4Address, CarStatus> m_lc_status;///for LC
+  std::map<Ipv4Address, CarInfo> m_lc_info;///for LC
 
   EventGarbageCollector m_events;
 	
@@ -191,6 +190,9 @@ private:
   Timer m_helloTimer;
   void HelloTimerExpire ();//implemented
 
+  Timer m_rmTimer;
+  void RmTimerExpire ();//implemented
+
   /// A list of pending messages which are buffered awaiting for being sent.
   sdn::MessageList m_queuedMessages;
   Timer m_queuedMessagesTimer; // timer for throttling outgoing messages
@@ -201,7 +203,9 @@ private:
   void SendRoutingMessage (); //Fullfilled
 
   void ProcessRm (const sdn::MessageHeader &msg);//implemented
-  void ProcessHM (const sdn::MessageHeader &msg); //Fullfilled
+  void ProcessHM (const sdn::MessageHeader &msg); //implemented
+
+  void ComputeRoute ();//
 
   /// Check that address is one of my interfaces
   bool IsMyOwnAddress (const Ipv4Address & a) const;//implemented
