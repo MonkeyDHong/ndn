@@ -59,13 +59,34 @@ struct RoutingTableEntry
 };
 
 // A struct for LC to hold Information that got from cars
-struct CarInfo
+class CarInfo
 {
+public:
+
+  //Get position by this time
+  Vector3D GetPos() const
+  {
+    double t = Simulator::Now ().GetSeconds () - LastActive.GetSeconds ();
+    double x = this->Position.x + this->Velocity.x * t,
+           y = this->Position.y + this->Velocity.y * t,
+           z = this->Position.z + this->Velocity.z * t;
+    return Vector3D(x, y, z);
+  }
   Vector3D Position;
   Vector3D Velocity;
   Time LastActive;//Timeout indicator
   bool Active;
   std::vector<RoutingTableEntry> R_Table;
+  uint32_t minhop;
+};
+
+struct ShortHop
+{
+  Ipv4Address nextID;
+  uint32_t hopnumber;
+  bool isTransfer;
+  Ipv4Address IDa, IDb, ID;
+  Time t;
 };
 
 class RoutingProtocol;
@@ -238,6 +259,8 @@ public:
   void SetType(NodeType nt); //implemented
   NodeType GetType() const; //implemented
 
+private:
+  std::vector< std::set<Ipv4Address> > m_Sections;
 
 };
 
