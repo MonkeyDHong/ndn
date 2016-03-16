@@ -78,6 +78,7 @@ public:
   bool Active;
   std::vector<RoutingTableEntry> R_Table;
   uint32_t minhop;
+  Ipv4Address ID_of_minhop;
 };
 
 struct ShortHop
@@ -86,7 +87,7 @@ struct ShortHop
   uint32_t hopnumber;
   bool isTransfer;
   Ipv4Address IDa, IDb, ID;
-  Time t;
+  double t; //in secends
 };
 
 class RoutingProtocol;
@@ -261,7 +262,12 @@ public:
 
 private:
   std::vector< std::set<Ipv4Address> > m_Sections;
-
+  ShortHop GetShortHop(const Ipv4Address& IDa, const Ipv4Address& IDb);
+  void LCAddEntry( const Ipv4Address& ID,
+                   const Ipv4Address& dest,
+                   const Ipv4Address& mask,
+                   const Ipv4Address& next);
+  void ClearAllTables();
 };
 
 
