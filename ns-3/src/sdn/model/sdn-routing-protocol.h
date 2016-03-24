@@ -64,7 +64,7 @@ class CarInfo
 public:
 
   //Get position by this time
-  Vector3D GetPos() const
+  Vector3D GetPos () const
   {
     double t = Simulator::Now ().GetSeconds () - LastActive.GetSeconds ();
     double x = this->Position.x + this->Velocity.x * t,
@@ -79,6 +79,7 @@ public:
   std::vector<RoutingTableEntry> R_Table;
   uint32_t minhop;
   Ipv4Address ID_of_minhop;
+  AppointmentType appointmentResult;
 };
 
 struct ShortHop
@@ -86,7 +87,7 @@ struct ShortHop
   Ipv4Address nextID;
   uint32_t hopnumber;
   bool isTransfer;
-  Ipv4Address IDa, IDb, ID;
+  Ipv4Address IDa, IDb, proxyID;
   double t; //in secends
 };
 
@@ -255,19 +256,55 @@ public:
 
 private:
   NodeType m_nodetype;
+  //Only node type CAR use this(below)
+  AppointmentType m_appointmentResult;
 
 public:
-  void SetType(NodeType nt); //implemented
-  NodeType GetType() const; //implemented
+  void SetType (NodeType nt); //implemented
+  NodeType GetType () const; //implemented
 
 private:
   std::vector< std::set<Ipv4Address> > m_Sections;
-  ShortHop GetShortHop(const Ipv4Address& IDa, const Ipv4Address& IDb);
+  ShortHop GetShortHop (const Ipv4Address& IDa, const Ipv4Address& IDb);
   void LCAddEntry( const Ipv4Address& ID,
                    const Ipv4Address& dest,
                    const Ipv4Address& mask,
                    const Ipv4Address& next);
-  void ClearAllTables();
+  void ClearAllTables ();
+
+  int GetArea (Vector3D position) const;
+  int GetNumArea () const;
+  void Init_NumArea();
+  int m_numArea;
+  bool m_isPadding;
+  bool m_numAreaVaild;
+
+  bool isPaddingExist () const;
+
+  void RemoveTimeOut ();
+
+  double m_road_length;
+  double m_signal_range;
+
+  void Do_Init_Compute ();
+  void Do_Update ();
+  void Reschedule ();
+
+  void Partition ();
+  void SetN_Init ();
+  void OtherSet_Init ();
+  void SelectNode ();
+
+  void SortByDistance (int area);
+  void CalcShortHopOfArea (int fromArea, int toArea);
+  void CalcIntraArea (int area);
+  void UpdateMinHop (const Ipv4Address &ID);
+  //ResetAppointmentResult In m_lc_info;
+  void ResetAppointmentResult ();
+  std::list<Ipv4Address> m_list4sort;
+  std::map<Ipv4Address, std::list<ShortHop> > m_lc_shorthop;
+
+  Ipv4Address m_theFirstCar;//Use by Reschedule (); Assign by SelectNode ();
 };
 
 
