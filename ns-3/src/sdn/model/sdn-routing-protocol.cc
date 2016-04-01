@@ -119,6 +119,7 @@ RoutingProtocol::RoutingProtocol ()
     m_CCHinterface (0),
     m_nodetype (OTHERS),
     m_appointmentResult (NORMAL),
+    m_next_forwarder (uint32_t (0)),
     m_linkEstablished (false),
     m_numArea (0),
     m_isPadding (false),
@@ -239,8 +240,7 @@ RoutingProtocol::DoInitialize ()
   Ipv4Address loopback ("127.0.0.1");
 
   bool canRunSdn = false;
-  //Install RecvSDN
-
+  //Install RecvSDN  Only on CCH channel.
   if(m_interfaceExclusions.find (m_CCHinterface) == m_interfaceExclusions.end ())
     {
       // Create a socket to listen only on this interface
@@ -473,8 +473,10 @@ RoutingProtocol::ProcessAppointment (const sdn::MessageHeader &msg)
           //std::cout<<" \"NORMAL\""<<std::endl;
           break;
         case FORWARDER:
+          m_next_forwarder = appointment.NextForwarder;
           std::cout<<"CAR"<<m_mainAddress.Get () % 256<<"ProcessAppointment";
           std::cout<<" \"FORWARDER\""<<std::endl;
+          std::cout<<"NextForwarder:"<<m_next_forwarder.Get () % 256<<std::endl;
           break;
         default:
           std::cout<<" ERROR TYPE"<<std::endl;
@@ -621,7 +623,7 @@ RoutingProtocol::RouteInput(Ptr<const Packet> p,
         }
 
       //Broadcast forward
-      if ((iif == m_SCHinterface) && (m_nodetype == CAR) && (m_appointmentResult == FORWARDER))
+      if ((iif == m_SCHinterface) && (m_nodetype == CAR) && (m_appointmentResult == FORWARDER) && (sour != m_next_forwarder))
         {
           NS_LOG_LOGIC ("Forward broadcast");
           Ptr<Ipv4Route> broadcastRoute = Create<Ipv4Route> ();
@@ -944,6 +946,7 @@ RoutingProtocol::SendAppointment ()
       sdn::MessageHeader::Appointment &appointment = msg.GetAppointment ();
       appointment.ID = cit->first;
       appointment.ATField = cit->second.appointmentResult;
+      appointment.NextForwarder = cit->second.ID_of_minhop;
       QueueMessage (msg, JITTER);
     }
 }

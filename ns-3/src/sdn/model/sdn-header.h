@@ -341,11 +341,15 @@ public:
   //       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
   //       |                       Appointment Type                        |
   //       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  //       |                 IpAddress of Next Forwarder                   |
+  //       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
 
   struct Appointment
   {
     Ipv4Address ID;
     AppointmentType ATField;
+    Ipv4Address NextForwarder;
 
     void Print (std::ostream &os) const;
     uint32_t GetSerializedSize (void) const;
