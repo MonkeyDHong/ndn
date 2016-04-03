@@ -34,6 +34,7 @@
 #include "ns3/ipv4.h"
 #include "ns3/ipv4-routing-protocol.h"
 #include "ns3/mobility-module.h"
+//#include "sdn-duplicate-detection.h"
 
 #include <vector>
 #include <map>
@@ -49,8 +50,10 @@ enum NodeType {CAR, LOCAL_CONTROLLER, OTHERS};
 struct RoutingTableEntry
 {
   RoutingTableEntry () : // default values
-                           destAddr (), nextHop (),
-                           mask(), interface (0) {};
+                           destAddr (uint32_t(0)),
+                           nextHop (uint32_t(0)),
+                           mask (uint32_t(0)),
+                           interface (0) {};
 
   Ipv4Address destAddr; ///< Address of the destination subnet.
   Ipv4Address nextHop; ///< Address of the next hop.
@@ -62,6 +65,14 @@ struct RoutingTableEntry
 class CarInfo
 {
 public:
+
+  CarInfo () :
+    Active (false)
+  {
+    minhop = INFINITY;
+    ID_of_minhop = Ipv4Address::GetZero ();
+    appointmentResult = AppointmentType::NORMAL;
+  };
 
   //Get position by this time
   Vector3D GetPos () const
@@ -84,6 +95,17 @@ public:
 
 struct ShortHop
 {
+  ShortHop ()
+  {
+    hopnumber = INFINITY;
+    isTransfer = false;
+    nextID = Ipv4Address::GetZero ();
+    IDa = Ipv4Address::GetZero ();
+    IDb = Ipv4Address::GetZero ();
+    proxyID = Ipv4Address::GetZero ();
+    t = 0;
+  };
+
   Ipv4Address nextID;
   uint32_t hopnumber;
   bool isTransfer;
@@ -108,7 +130,8 @@ public:
   ///        interface
   /// \param interface IPv4 interface index
   ///
-  void SetMainInterface (uint32_t interface);//implemented
+  void SetSCHInterface (uint32_t interface);//implemented
+  void SetCCHInterface (uint32_t interface);//implemented
 
   ///
   /// Dump the routing table
@@ -160,6 +183,8 @@ private:
   Time m_helloInterval;
   /// Routing messages' emission interval.
   Time m_rmInterval;
+  /// minimum ap message emission interval
+  Time m_minAPInterval;
 
   Ptr<Ipv4> m_ipv4;
 
@@ -216,6 +241,9 @@ private:
   Timer m_rmTimer;
   void RmTimerExpire ();//implemented
 
+  Timer m_apTimer;
+  void APTimerExpire ();
+
   /// A list of pending messages which are buffered awaiting for being sent.
   sdn::MessageList m_queuedMessages;
   Timer m_queuedMessagesTimer; // timer for throttling outgoing messages
@@ -224,7 +252,9 @@ private:
   void SendQueuedMessages ();//implemented
   void SendHello ();//implemented
   void SendRoutingMessage (); //Fullfilled
+  void SendAppointment();
 
+  void ProcessAppointment (const sdn::MessageHeader &msg);
   void ProcessRm (const sdn::MessageHeader &msg);//implemented
   void ProcessHM (const sdn::MessageHeader &msg); //implemented
 
@@ -233,8 +263,10 @@ private:
   /// Check that address is one of my interfaces
   bool IsMyOwnAddress (const Ipv4Address & a) const;//implemented
 
+private:
   Ipv4Address m_mainAddress;
-
+  uint32_t m_SCHinterface;
+  uint32_t m_CCHinterface;
   // One socket per interface, each bound to that interface's address
   // (reason: for VANET-SDN we need to distinguish CCH and SCH interfaces)
   std::map< Ptr<Socket>, Ipv4InterfaceAddress > m_socketAddresses;
@@ -264,6 +296,7 @@ public:
   NodeType GetType () const; //implemented
 
 private:
+  bool m_linkEstablished;
   std::vector< std::set<Ipv4Address> > m_Sections;
   ShortHop GetShortHop (const Ipv4Address& IDa, const Ipv4Address& IDb);
   void LCAddEntry( const Ipv4Address& ID,
@@ -285,7 +318,10 @@ private:
 
   double m_road_length;
   double m_signal_range;
+public:
+  void SetSignalRangeNRoadLength (double signal_range, double road_length);
 
+private:
   void Do_Init_Compute ();
   void Do_Update ();
   void Reschedule ();
@@ -304,7 +340,13 @@ private:
   std::list<Ipv4Address> m_list4sort;
   std::map<Ipv4Address, std::list<ShortHop> > m_lc_shorthop;
 
-  Ipv4Address m_theFirstCar;//Use by Reschedule (); Assign by SelectNode ();
+  void ShiftArea ();
+  void AddNewToZero ();
+  void CalcSetZero ();
+  void SelectNewNodeInAreaZero ();
+
+  Ipv4Address m_theFirstCar;//Use by Reschedule (), SelectNewNodeInAreaZero(); Assign by SelectNode ();
+  //Duplicate_Detection m_duplicate_detection;
 };
 
 

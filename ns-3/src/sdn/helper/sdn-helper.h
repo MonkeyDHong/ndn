@@ -110,6 +110,11 @@ public:
    */
   void SetNodeTypeMap (Ptr<Node> node, sdn::NodeType nt);
 
+  /*
+   * Set Road length and signal range
+   */
+  void SetRLnSR(double signal_range, double road_length);
+
 private:
   /**
    * \internal
@@ -118,9 +123,10 @@ private:
    */
   SdnHelper &operator = (const SdnHelper &o);
   ObjectFactory m_agentFactory;
-  //std::map< Ptr<Node>, Ptr<MobilityModel> > m_mobility;
   std::map< Ptr<Node>, sdn::NodeType > m_ntmap;
   std::map< Ptr<Node>, std::set<uint32_t> > m_interfaceExclusions;
+  double m_rl;
+  double m_sr;
 };
 
 } // namespace ns3

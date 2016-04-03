@@ -5,7 +5,7 @@
  *      Author: chl
  */
 /*
-  ./waf --run "scratch/SDN --traceFile=/home/chl/ns-allinone-3.23/ns-3.23/scratch/mobility.tcl --nodeNum=135 --duration=131.0 --logFile=SDN.log --numPackets=130"
+  ./waf --run "SDN"
 */
 #include <iostream>
 #include <fstream>
@@ -30,8 +30,8 @@ VanetSim::VanetSim()
 	freq2 = 5.890e9;  //802.11p CCH CH178
 	txp1 = 20;  // dBm SCH
 	txp2 = 20;  // CCH
-	range1 = 800.0;//SCH
-	range2 = 1200.0;//CCH
+	range1 = 400.0;//SCH
+	range2 = 1000.0;//CCH
 	packetSize = 1000; // bytes
 	numPackets = 1;
 	interval = 0.1; // seconds
@@ -272,7 +272,7 @@ void VanetSim::ConfigApp()
 	  sdn.ExcludeInterface (m_nodes.Get (nodeNum), 0);
 	  sdn.SetNodeTypeMap (m_nodes.Get (nodeNum+1), sdn::CAR);//Treat Source and Sink as CAR
 	  sdn.SetNodeTypeMap (m_nodes.Get (nodeNum+2), sdn::CAR);
-
+	  sdn.SetRLnSR (range1, range2);
 	  internet.SetRoutingHelper(sdn);
 		std::cout<<"SetRoutingHelper Done"<<std::endl;
 	}
@@ -284,7 +284,7 @@ void VanetSim::ConfigApp()
 	Ipv4AddressHelper ipv4S;
 	NS_LOG_INFO ("Assign IP Addresses.");
 	ipv4S.SetBase ("10.1.1.0", "255.255.255.0");//SCH
-	m_SCHInterface = ipv4S.Assign (m_SCHDevices);
+	m_SCHInterfaces = ipv4S.Assign (m_SCHDevices);
 	std::cout<<"IPV4S Assigned"<<std::endl;
 
 
@@ -293,8 +293,16 @@ void VanetSim::ConfigApp()
 		Ipv4AddressHelper ipv4C;
 		NS_LOG_INFO ("Assign IP-C Addresses.");
 		ipv4C.SetBase("192.168.0.0","255.255.255.0");//CCH
-		m_CCHInterface = ipv4C.Assign(m_CCHDevices);
+		m_CCHInterfaces = ipv4C.Assign(m_CCHDevices);
 		std::cout<<"IPV4C Assigned"<<std::endl;
+		for (uint32_t i = 0;i<m_nodes.GetN ();++i)
+		  {
+		    //std::cout<<"m_nodes.GetN () "<<i<<std::endl;
+		    Ptr<sdn::RoutingProtocol> routing =
+		        m_nodes.Get (i)->GetObject<sdn::RoutingProtocol> ();
+        routing->SetCCHInterface (m_CCHInterfaces.Get (i).second);
+		    routing->SetSCHInterface (m_SCHInterfaces.Get (i).second);
+		  }
 	}
 
 
@@ -302,12 +310,12 @@ void VanetSim::ConfigApp()
 	//source
 
 	//onoff
-	Address remote (InetSocketAddress(m_SCHInterface.GetAddress(nodeNum+2), m_port));
+	Address remote (InetSocketAddress(m_SCHInterfaces.GetAddress(nodeNum+2), m_port));
 	OnOffHelper Source("ns3::UdpSocketFactory",remote);//SendToSink
 	Source.SetAttribute("OffTime",StringValue ("ns3::ConstantRandomVariable[Constant=0.0]"));
 
-	m_source = Source.Install(m_nodes.Get(nodeNum+1));//Insatll on Source
-	m_source.Stop(Seconds(duration));//Default Start time is 0.
+	//m_source = Source.Install(m_nodes.Get(nodeNum+1));//Insatll on Source
+	//m_source.Stop(Seconds(duration));//Default Start time is 0.
 
 	/*
 	TypeId tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
@@ -318,7 +326,7 @@ void VanetSim::ConfigApp()
 	//sink
 	TypeId tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
 	Ptr<Socket> sink = Socket::CreateSocket (m_nodes.Get(nodeNum+2), tid);//The Sink
-	InetSocketAddress local = InetSocketAddress(m_SCHInterface.GetAddress(nodeNum+2),m_port);
+	InetSocketAddress local = InetSocketAddress(m_SCHInterfaces.GetAddress(nodeNum+2),m_port);
 	sink->Bind(local);
 	sink->SetRecvCallback(MakeCallback(&VanetSim::ReceiveDataPacket, this));
 }
@@ -368,7 +376,7 @@ void VanetSim::Run()
 void VanetSim::Look_at_clock()
 {
 	std::cout<<"Now:"<<Simulator::Now().GetSeconds()<<std::endl;
-	Ptr<MobilityModel> Temp = m_nodes.Get (nodeNum)->GetObject<MobilityModel>();
+	/*Ptr<MobilityModel> Temp = m_nodes.Get (nodeNum)->GetObject<MobilityModel>();
   std::cout<<Temp->GetPosition().x<<","<<Temp->GetPosition().y<<","<<Temp->GetPosition().z<<std::endl;
   std::cout<<Temp->GetVelocity().x<<","<<Temp->GetVelocity().y<<","<<Temp->GetVelocity().z<<std::endl;
   Temp = m_nodes.Get (nodeNum+1)->GetObject<MobilityModel>();
@@ -377,6 +385,7 @@ void VanetSim::Look_at_clock()
   Temp = m_nodes.Get (nodeNum+2)->GetObject<MobilityModel>();
   std::cout<<Temp->GetPosition().x<<","<<Temp->GetPosition().y<<","<<Temp->GetPosition().z<<std::endl;
   std::cout<<Temp->GetVelocity().x<<","<<Temp->GetVelocity().y<<","<<Temp->GetVelocity().z<<std::endl;
+  */
 	/*
 	os<<"Now:"<<Simulator::Now().GetSeconds()<<std::endl;
 	Ptr<OutputStreamWrapper> osw = Create<OutputStreamWrapper> (&std::cout);
