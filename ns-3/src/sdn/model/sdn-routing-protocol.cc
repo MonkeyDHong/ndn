@@ -474,9 +474,9 @@ RoutingProtocol::ProcessAppointment (const sdn::MessageHeader &msg)
           break;
         case FORWARDER:
           m_next_forwarder = appointment.NextForwarder;
-          std::cout<<"CAR"<<m_mainAddress.Get () % 256<<"ProcessAppointment";
-          std::cout<<" \"FORWARDER\""<<std::endl;
-          std::cout<<"NextForwarder:"<<m_next_forwarder.Get () % 256<<std::endl;
+          //std::cout<<"CAR"<<m_mainAddress.Get () % 256<<"ProcessAppointment";
+          //std::cout<<" \"FORWARDER\""<<std::endl;
+          //std::cout<<"NextForwarder:"<<m_next_forwarder.Get () % 256<<std::endl;
           break;
         default:
           std::cout<<" ERROR TYPE"<<std::endl;
@@ -607,8 +607,6 @@ RoutingProtocol::RouteInput(Ptr<const Packet> p,
   uint32_t iif = m_ipv4->GetInterfaceForDevice (idev);
   if (m_ipv4->IsDestinationAddress (dest, iif))
     {
-      //Duplicate Detection. TODO
-      //if (m_duplicate_detection.CheckThis ())
       //Local delivery
       if (!lcb.IsNull ())
         {
@@ -1314,7 +1312,17 @@ RoutingProtocol::GetShortHop(const Ipv4Address& IDa, const Ipv4Address& IDb)
   double const pxa = m_lc_info[IDa].GetPos ().x,
                pxb = m_lc_info[IDb].GetPos ().x;
   // time to b left
-  double const t2bl = (m_road_length - pxb) / vxb;
+  double temp;
+  if (vxb > 0)
+    {
+      temp = (m_road_length - pxb) / vxb;
+    }
+  else
+    {
+      //b is fixed.
+      temp = (m_road_length - pxa) / vxa;
+    }
+  double const t2bl = temp;
   if ((pxb - pxa < m_signal_range) && (abs((pxb + vxb*t2bl)-(pxa + vxa*t2bl)) < m_signal_range))
     {
       ShortHop sh;
@@ -1406,106 +1414,31 @@ RoutingProtocol::GetArea (Vector3D position) const
   else
     {
       road_length -= 0.5*m_signal_range;
-      px -= 0.5*m_signal_range;
       int numOfTrivialArea = road_length / m_signal_range;
-      int numOfTrivialArea_car = px / m_signal_range;
-      double last_length = road_length - (m_signal_range * numOfTrivialArea);
+      double remain = road_length - (numOfTrivialArea * m_signal_range);
+      if (!(remain>0))
+        numOfTrivialArea--;
 
-      if (numOfTrivialArea_car < numOfTrivialArea)
+      px -= 0.5*m_signal_range;
+      if (px < numOfTrivialArea * m_signal_range)
         {
-          //std::cout<<"RET2"<<std::endl;
-          return numOfTrivialArea_car + 1;//Plus First Area;
+          return (px / m_signal_range) + 1;
         }
-      else//numOfTrivialArea_car == numOfTrivialArea
+      else
         {
-          if (numOfTrivialArea == 0)
+          if (road_length - px < 0.5*m_signal_range)
             {
-              /*
-               * 0.5r ~ <0.5r
-               *         ^here;
-               */
-              if (road_length < m_signal_range)
-                {
-                  //std::cout<<"RET3"<<std::endl;
-                  return 1;
-                }
+              if (isPaddingExist())
+                return numOfTrivialArea + 2;
               else
-                /*
-                 * 0.5r ~ padding ~ 0.5r
-                 *                  ^here
-                 */
-                if (road_length - px < 0.5 * m_signal_range)
-                  {
-                    //std::cout<<"RET4"<<std::endl;
-                    return 2;
-                  }
-                /*
-                 * 0.5r ~ padding ~ 0.5r
-                 *            ^here
-                 */
-                else
-                  {
-                    //std::cout<<"RET5"<<std::endl;
-                    return 1;
-                  }
-
-            }//==0
+                return numOfTrivialArea + 1;
+            }
           else
             {
-              if (last_length < 1e-10) //last_length == 0
-                {
-                  if (road_length - px > 0.5 * m_signal_range)
-                    {
-                      /*
-                       * ~ r ~ 0.5r ~ 0.5r
-                       *        ^here
-                       */
-                      //std::cout<<"RET6"<<std::endl;
-                      return numOfTrivialArea;
-                    }
-                  else
-                    {
-                      /*
-                       * ~ r ~ 0.5r ~ 0.5r
-                       *               ^here
-                       */
-                      //std::cout<<"RET7"<<std::endl;
-                      return numOfTrivialArea + 1;//start from zero
-                    }
-                }
-              else
-                if (last_length > 0.5 * m_signal_range)
-                  {
-                    if (road_length - px > 0.5 * m_signal_range)
-                      {
-                        /*
-                         * ~ r ~ padding ~ 0.5r
-                         *        ^here
-                         */
-                        //std::cout<<"RET8"<<std::endl;
-                        return numOfTrivialArea + 1;
-                      }
-                    else
-                      {
-                        /*
-                         * ~ r ~ padding ~ 0.5r
-                         *                  ^here
-                         */
-                        //std::cout<<"RET9"<<std::endl;
-                        return numOfTrivialArea + 2;
-                      }
-                  }
-                else
-                  {
-                    /*
-                     * ~ r ~ last
-                     *        ^here;
-                     */
-                    //std::cout<<"RET10"<<std::endl;
-                    return numOfTrivialArea + 1;
-                  }
+              return numOfTrivialArea + 1;
             }
         }
+
     }
 
 }
