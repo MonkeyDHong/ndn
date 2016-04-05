@@ -287,10 +287,9 @@ void VanetSim::ConfigApp()
 	m_SCHInterfaces = ipv4S.Assign (m_SCHDevices);
 	std::cout<<"IPV4S Assigned"<<std::endl;
 
-
+	Ipv4AddressHelper ipv4C;
 	if (mod ==1)
 	{
-		Ipv4AddressHelper ipv4C;
 		NS_LOG_INFO ("Assign IP-C Addresses.");
 		ipv4C.SetBase("192.168.0.0","255.255.255.0");//CCH
 		m_CCHInterfaces = ipv4C.Assign(m_CCHDevices);
@@ -310,12 +309,15 @@ void VanetSim::ConfigApp()
 	//source
 
 	//onoff
-	Address remote (InetSocketAddress(m_SCHInterfaces.GetAddress(nodeNum+2), m_port));
+	std::pair<Ptr<Ipv4>, uint32_t> RetValue = m_SCHInterfaces.Get (nodeNum+1);
+	Ipv4InterfaceAddress theinterface = RetValue.first->GetAddress (RetValue.second, 0);
+  Ipv4Address bcast = theinterface.GetLocal ().GetSubnetDirectedBroadcast (theinterface.GetMask ());
+	Address remote (InetSocketAddress(bcast, m_port));
 	OnOffHelper Source("ns3::UdpSocketFactory",remote);//SendToSink
 	Source.SetAttribute("OffTime",StringValue ("ns3::ConstantRandomVariable[Constant=0.0]"));
 
-	//m_source = Source.Install(m_nodes.Get(nodeNum+1));//Insatll on Source
-	//m_source.Stop(Seconds(duration));//Default Start time is 0.
+	m_source = Source.Install(m_nodes.Get(nodeNum+1));//Insatll on Source
+	m_source.Stop(Seconds(duration));//Default Start time is 0.
 
 	/*
 	TypeId tid = TypeId::LookupByName ("ns3::UdpSocketFactory");

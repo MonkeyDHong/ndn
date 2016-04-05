@@ -277,6 +277,11 @@ RoutingProtocol::SetCCHInterface (uint32_t interface)
   //std::cout<<"SetCCHInterface "<<interface<<std::endl;
   m_mainAddress = m_ipv4->GetAddress (interface, 0).GetLocal ();
   m_CCHinterface = interface;
+  Ipv4InterfaceAddress temp_if_add = m_ipv4->GetAddress (m_CCHinterface, 0);
+  AddEntry (temp_if_add.GetLocal (),
+            Ipv4Address (temp_if_add.GetMask ().Get ()),
+            temp_if_add.GetLocal (),
+            m_CCHinterface);
   //std::cout<<"SetCCHInterface "<<m_mainAddress.Get ()%256<<std::endl;
 }
 
@@ -285,6 +290,11 @@ RoutingProtocol::SetSCHInterface (uint32_t interface)
 {
   //std::cout<<"SetSCHInterface "<<interface<<std::endl;
   m_SCHinterface = interface;
+  Ipv4InterfaceAddress temp_if_add = m_ipv4->GetAddress (m_SCHinterface, 0);
+  AddEntry (temp_if_add.GetLocal (),
+            Ipv4Address (temp_if_add.GetMask ().Get ()),
+            temp_if_add.GetLocal (),
+            m_SCHinterface);
   //std::cout<<"SetSCHInterface "<<m_mainAddress.Get ()%256<<std::endl;
 }
 
@@ -527,8 +537,8 @@ RoutingProtocol::AddEntry (const Ipv4Address &dest,
            return;
          }
      }
+  //ERROR NO MATCHING INTERFACES
   NS_ASSERT(false);
-  AddEntry(dest, mask, next, 0);
 }
 
 bool
@@ -605,6 +615,10 @@ RoutingProtocol::RouteInput(Ptr<const Packet> p,
   // Local delivery
   NS_ASSERT (m_ipv4->GetInterfaceForDevice (idev) >= 0);
   uint32_t iif = m_ipv4->GetInterfaceForDevice (idev);
+
+  if (iif == m_SCHinterface)
+    std::cout<<"Yes?"<<std::endl;
+
   if (m_ipv4->IsDestinationAddress (dest, iif))
     {
       //Local delivery
@@ -658,16 +672,19 @@ RoutingProtocol::RouteOutput (Ptr<Packet> p,
              Ptr<NetDevice> oif,
              Socket::SocketErrno &sockerr)
 {
+  //TODO
   NS_LOG_FUNCTION (this << " " << m_ipv4->GetObject<Node> ()->GetId () << " " << header.GetDestination () << " " << oif);
   Ptr<Ipv4Route> rtentry;
   RoutingTableEntry entry;
-  //std::cout<<"RouteOutput "<<m_mainAddress.Get ()%256 << ",Dest:"<<header.GetDestination ().Get ()%256<<std::endl;
+  std::cout<<"RouteOutput "<<m_mainAddress.Get ()%256 << ",Dest:"<<header.GetDestination ().Get ()%256<<std::endl;
+  std::cout<<"M_TABLE SIZE "<<m_table.size ()<<std::endl;
   if (Lookup (header.GetDestination (), entry))
     {
+      std::cout<<"found!"<<std::endl;
       uint32_t interfaceIdx = entry.interface;
       if (oif && m_ipv4->GetInterfaceForDevice (oif) != static_cast<int> (interfaceIdx))
         {
-          // We do not attempt to perform a constrained routing search
+          // We do not attempt to perform a constrained routing searchTx_Data_Pkts
           // if the caller specifies the oif; we just enforce that
           // that the found route matches the requested outbound interface
           NS_LOG_DEBUG ("SDN node " << m_mainAddress
@@ -709,7 +726,7 @@ RoutingProtocol::RouteOutput (Ptr<Packet> p,
                                  << ": RouteOutput for dest=" << header.GetDestination ()
                                  << " No route to host");
       sockerr = Socket::ERROR_NOROUTETOHOST;
-      //std::cout<<"No route to host"<<std::endl;
+      std::cout<<"No route to host"<<std::endl;
     }
   return rtentry;
 }
