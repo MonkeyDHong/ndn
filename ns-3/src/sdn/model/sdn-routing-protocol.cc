@@ -612,13 +612,10 @@ RoutingProtocol::RouteInput(Ptr<const Packet> p,
       return true;
     }
 
+
   // Local delivery
   NS_ASSERT (m_ipv4->GetInterfaceForDevice (idev) >= 0);
   uint32_t iif = m_ipv4->GetInterfaceForDevice (idev);
-
-  if (iif == m_SCHinterface)
-    std::cout<<"Yes?"<<std::endl;
-
   if (m_ipv4->IsDestinationAddress (dest, iif))
     {
       //Local delivery
@@ -626,6 +623,11 @@ RoutingProtocol::RouteInput(Ptr<const Packet> p,
         {
           NS_LOG_LOGIC ("Broadcast local delivery to " << dest);
           lcb (p, header, iif);
+          /*if ((m_mainAddress.Get ()%256 == 53)&&(iif=m_SCHinterface))
+            {
+              std::cout<<m_mainAddress.Get ()%256<<" "<<header.GetDestination ().Get () %256<<std::endl;
+              std::cout<<"YES!"<<std::endl;
+            }*/
         }
       else
         {
@@ -643,8 +645,8 @@ RoutingProtocol::RouteInput(Ptr<const Packet> p,
           broadcastRoute->SetGateway (dest);//broadcast
           broadcastRoute->SetOutputDevice (m_ipv4->GetNetDevice (m_SCHinterface));
           broadcastRoute->SetSource (sour);
-          std::cout<<"call ucb"<<std::endl;
-          //ucb (broadcastRoute, p, header);
+          //std::cout<<"call ucb"<<std::endl;
+          ucb (broadcastRoute, p, header);
         }
       return true;
 
@@ -672,15 +674,14 @@ RoutingProtocol::RouteOutput (Ptr<Packet> p,
              Ptr<NetDevice> oif,
              Socket::SocketErrno &sockerr)
 {
-  //TODO
   NS_LOG_FUNCTION (this << " " << m_ipv4->GetObject<Node> ()->GetId () << " " << header.GetDestination () << " " << oif);
   Ptr<Ipv4Route> rtentry;
   RoutingTableEntry entry;
-  std::cout<<"RouteOutput "<<m_mainAddress.Get ()%256 << ",Dest:"<<header.GetDestination ().Get ()%256<<std::endl;
-  std::cout<<"M_TABLE SIZE "<<m_table.size ()<<std::endl;
+  //std::cout<<"RouteOutput "<<m_mainAddress.Get ()%256 << ",Dest:"<<header.GetDestination ().Get ()%256<<std::endl;
+  //std::cout<<"M_TABLE SIZE "<<m_table.size ()<<std::endl;
   if (Lookup (header.GetDestination (), entry))
     {
-      std::cout<<"found!"<<std::endl;
+      //std::cout<<"found!"<<std::endl;
       uint32_t interfaceIdx = entry.interface;
       if (oif && m_ipv4->GetInterfaceForDevice (oif) != static_cast<int> (interfaceIdx))
         {
@@ -708,7 +709,7 @@ RoutingProtocol::RouteOutput (Ptr<Packet> p,
       if (numOifAddresses == 1) {
           ifAddr = m_ipv4->GetAddress (interfaceIdx, 0);
         } else {
-          NS_FATAL_ERROR ("XXX Not implemented yet:  IP aliasing and OLSR");
+          NS_FATAL_ERROR ("XXX Not implemented yet:  IP aliasing and SDN");
         }
       rtentry->SetSource (ifAddr.GetLocal ());
       rtentry->SetGateway (entry.nextHop);

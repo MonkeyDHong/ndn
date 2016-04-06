@@ -19,7 +19,6 @@ NS_LOG_COMPONENT_DEFINE ("SDN");
 
 using namespace ns3;
 
-
 VanetSim::VanetSim()
 {
 	traceFile = "";
@@ -70,7 +69,7 @@ void VanetSim::Simulate(int argc, char *argv[])
 	ConfigApp();
 	ConfigTracing();
 	Run();
-	//ProcessOutputs();
+	ProcessOutputs();
 	std::cout<<std::endl;
 }
 
@@ -316,9 +315,13 @@ void VanetSim::ConfigApp()
 	OnOffHelper Source("ns3::UdpSocketFactory",remote);//SendToSink
 	Source.SetAttribute("OffTime",StringValue ("ns3::ConstantRandomVariable[Constant=0.0]"));
 
+
 	m_source = Source.Install(m_nodes.Get(nodeNum+1));//Insatll on Source
 	m_source.Stop(Seconds(duration));//Default Start time is 0.
 
+	Config::ConnectWithoutContext (
+	    "/NodeList/51/ApplicationList/0/$ns3::OnOffApplication/Tx",
+	    MakeCallback(&VanetSim::TXTrace, this));
 	/*
 	TypeId tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
 	source = Socket::CreateSocket (m_nodes.Get(nodeNum+1), tid);
@@ -327,8 +330,9 @@ void VanetSim::ConfigApp()
 
 	//sink
 	TypeId tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
-	Ptr<Socket> sink = Socket::CreateSocket (m_nodes.Get(nodeNum+2), tid);//The Sink
-	InetSocketAddress local = InetSocketAddress(m_SCHInterfaces.GetAddress(nodeNum+2),m_port);
+	Ptr<Socket> sink = Socket::CreateSocket (m_nodes.Get(52), tid);//The Sink
+  //HearALL;
+	InetSocketAddress local = InetSocketAddress(Ipv4Address::GetZero (),m_port);
 	sink->Bind(local);
 	sink->SetRecvCallback(MakeCallback(&VanetSim::ReceiveDataPacket, this));
 }
@@ -359,8 +363,6 @@ void VanetSim::ConfigTracing()
 
 void VanetSim::ProcessOutputs()
 {
-	Ptr<OnOffApplication> app = DynamicCast<OnOffApplication>(m_source.Get(0));
-	//Tx_Data_Pkts = app->Tx_packets;
 	std::cout<<Tx_Data_Pkts<<std::endl;
 	std::cout<<Rx_Data_Pkts<<std::endl;
 }
@@ -407,6 +409,14 @@ void VanetSim::Look_at_clock()
 	//ProcessOutputs();
 
 	Simulator::Schedule(Seconds(1.0), &VanetSim::Look_at_clock, this);
+}
+
+void
+VanetSim::TXTrace (Ptr<const Packet> newpacket)
+{
+  Tx_Data_Pkts++;
+  Tx_Data_Bytes += newpacket->GetSize ();
+  //std::cout<<"ANOTHER ONE!HAHAHA"<<std::endl;
 }
 
 // Example to use ns2 traces file in ns3
