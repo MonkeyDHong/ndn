@@ -119,6 +119,7 @@ RoutingProtocol::RoutingProtocol ()
     m_CCHinterface (0),
     m_nodetype (OTHERS),
     m_appointmentResult (NORMAL),
+    m_next_forwarder (uint32_t (0)),
     m_linkEstablished (false),
     m_numArea (0),
     m_isPadding (false),
@@ -239,8 +240,7 @@ RoutingProtocol::DoInitialize ()
   Ipv4Address loopback ("127.0.0.1");
 
   bool canRunSdn = false;
-  //Install RecvSDN
-
+  //Install RecvSDN  Only on CCH channel.
   if(m_interfaceExclusions.find (m_CCHinterface) == m_interfaceExclusions.end ())
     {
       // Create a socket to listen only on this interface
@@ -277,6 +277,11 @@ RoutingProtocol::SetCCHInterface (uint32_t interface)
   //std::cout<<"SetCCHInterface "<<interface<<std::endl;
   m_mainAddress = m_ipv4->GetAddress (interface, 0).GetLocal ();
   m_CCHinterface = interface;
+  Ipv4InterfaceAddress temp_if_add = m_ipv4->GetAddress (m_CCHinterface, 0);
+  AddEntry (temp_if_add.GetLocal (),
+            Ipv4Address (temp_if_add.GetMask ().Get ()),
+            temp_if_add.GetLocal (),
+            m_CCHinterface);
   //std::cout<<"SetCCHInterface "<<m_mainAddress.Get ()%256<<std::endl;
 }
 
@@ -285,6 +290,11 @@ RoutingProtocol::SetSCHInterface (uint32_t interface)
 {
   //std::cout<<"SetSCHInterface "<<interface<<std::endl;
   m_SCHinterface = interface;
+  Ipv4InterfaceAddress temp_if_add = m_ipv4->GetAddress (m_SCHinterface, 0);
+  AddEntry (temp_if_add.GetLocal (),
+            Ipv4Address (temp_if_add.GetMask ().Get ()),
+            temp_if_add.GetLocal (),
+            m_SCHinterface);
   //std::cout<<"SetSCHInterface "<<m_mainAddress.Get ()%256<<std::endl;
 }
 
@@ -473,8 +483,10 @@ RoutingProtocol::ProcessAppointment (const sdn::MessageHeader &msg)
           //std::cout<<" \"NORMAL\""<<std::endl;
           break;
         case FORWARDER:
-          std::cout<<"CAR"<<m_mainAddress.Get () % 256<<"ProcessAppointment";
-          std::cout<<" \"FORWARDER\""<<std::endl;
+          m_next_forwarder = appointment.NextForwarder;
+          //std::cout<<"CAR"<<m_mainAddress.Get () % 256<<"ProcessAppointment";
+          //std::cout<<" \"FORWARDER\""<<std::endl;
+          //std::cout<<"NextForwarder:"<<m_next_forwarder.Get () % 256<<std::endl;
           break;
         default:
           std::cout<<" ERROR TYPE"<<std::endl;
@@ -525,8 +537,8 @@ RoutingProtocol::AddEntry (const Ipv4Address &dest,
            return;
          }
      }
+  //ERROR NO MATCHING INTERFACES
   NS_ASSERT(false);
-  AddEntry(dest, mask, next, 0);
 }
 
 bool
@@ -600,18 +612,22 @@ RoutingProtocol::RouteInput(Ptr<const Packet> p,
       return true;
     }
 
+
   // Local delivery
   NS_ASSERT (m_ipv4->GetInterfaceForDevice (idev) >= 0);
   uint32_t iif = m_ipv4->GetInterfaceForDevice (idev);
   if (m_ipv4->IsDestinationAddress (dest, iif))
     {
-      //Duplicate Detection. TODO
-      //if (m_duplicate_detection.CheckThis ())
       //Local delivery
       if (!lcb.IsNull ())
         {
           NS_LOG_LOGIC ("Broadcast local delivery to " << dest);
           lcb (p, header, iif);
+          /*if ((m_mainAddress.Get ()%256 == 53)&&(iif=m_SCHinterface))
+            {
+              std::cout<<m_mainAddress.Get ()%256<<" "<<header.GetDestination ().Get () %256<<std::endl;
+              std::cout<<"YES!"<<std::endl;
+            }*/
         }
       else
         {
@@ -621,7 +637,7 @@ RoutingProtocol::RouteInput(Ptr<const Packet> p,
         }
 
       //Broadcast forward
-      if ((iif == m_SCHinterface) && (m_nodetype == CAR) && (m_appointmentResult == FORWARDER))
+      if ((iif == m_SCHinterface) && (m_nodetype == CAR) && (m_appointmentResult == FORWARDER) && (sour != m_next_forwarder))
         {
           NS_LOG_LOGIC ("Forward broadcast");
           Ptr<Ipv4Route> broadcastRoute = Create<Ipv4Route> ();
@@ -629,8 +645,8 @@ RoutingProtocol::RouteInput(Ptr<const Packet> p,
           broadcastRoute->SetGateway (dest);//broadcast
           broadcastRoute->SetOutputDevice (m_ipv4->GetNetDevice (m_SCHinterface));
           broadcastRoute->SetSource (sour);
-          std::cout<<"call ucb"<<std::endl;
-          //ucb (broadcastRoute, p, header);
+          //std::cout<<"call ucb"<<std::endl;
+          ucb (broadcastRoute, p, header);
         }
       return true;
 
@@ -662,12 +678,14 @@ RoutingProtocol::RouteOutput (Ptr<Packet> p,
   Ptr<Ipv4Route> rtentry;
   RoutingTableEntry entry;
   //std::cout<<"RouteOutput "<<m_mainAddress.Get ()%256 << ",Dest:"<<header.GetDestination ().Get ()%256<<std::endl;
+  //std::cout<<"M_TABLE SIZE "<<m_table.size ()<<std::endl;
   if (Lookup (header.GetDestination (), entry))
     {
+      //std::cout<<"found!"<<std::endl;
       uint32_t interfaceIdx = entry.interface;
       if (oif && m_ipv4->GetInterfaceForDevice (oif) != static_cast<int> (interfaceIdx))
         {
-          // We do not attempt to perform a constrained routing search
+          // We do not attempt to perform a constrained routing searchTx_Data_Pkts
           // if the caller specifies the oif; we just enforce that
           // that the found route matches the requested outbound interface
           NS_LOG_DEBUG ("SDN node " << m_mainAddress
@@ -691,7 +709,7 @@ RoutingProtocol::RouteOutput (Ptr<Packet> p,
       if (numOifAddresses == 1) {
           ifAddr = m_ipv4->GetAddress (interfaceIdx, 0);
         } else {
-          NS_FATAL_ERROR ("XXX Not implemented yet:  IP aliasing and OLSR");
+          NS_FATAL_ERROR ("XXX Not implemented yet:  IP aliasing and SDN");
         }
       rtentry->SetSource (ifAddr.GetLocal ());
       rtentry->SetGateway (entry.nextHop);
@@ -709,7 +727,7 @@ RoutingProtocol::RouteOutput (Ptr<Packet> p,
                                  << ": RouteOutput for dest=" << header.GetDestination ()
                                  << " No route to host");
       sockerr = Socket::ERROR_NOROUTETOHOST;
-      //std::cout<<"No route to host"<<std::endl;
+      std::cout<<"No route to host"<<std::endl;
     }
   return rtentry;
 }
@@ -944,6 +962,7 @@ RoutingProtocol::SendAppointment ()
       sdn::MessageHeader::Appointment &appointment = msg.GetAppointment ();
       appointment.ID = cit->first;
       appointment.ATField = cit->second.appointmentResult;
+      appointment.NextForwarder = cit->second.ID_of_minhop;
       QueueMessage (msg, JITTER);
     }
 }
@@ -1311,7 +1330,17 @@ RoutingProtocol::GetShortHop(const Ipv4Address& IDa, const Ipv4Address& IDb)
   double const pxa = m_lc_info[IDa].GetPos ().x,
                pxb = m_lc_info[IDb].GetPos ().x;
   // time to b left
-  double const t2bl = (m_road_length - pxb) / vxb;
+  double temp;
+  if (vxb > 0)
+    {
+      temp = (m_road_length - pxb) / vxb;
+    }
+  else
+    {
+      //b is fixed.
+      temp = (m_road_length - pxa) / vxa;
+    }
+  double const t2bl = temp;
   if ((pxb - pxa < m_signal_range) && (abs((pxb + vxb*t2bl)-(pxa + vxa*t2bl)) < m_signal_range))
     {
       ShortHop sh;
@@ -1403,106 +1432,31 @@ RoutingProtocol::GetArea (Vector3D position) const
   else
     {
       road_length -= 0.5*m_signal_range;
-      px -= 0.5*m_signal_range;
       int numOfTrivialArea = road_length / m_signal_range;
-      int numOfTrivialArea_car = px / m_signal_range;
-      double last_length = road_length - (m_signal_range * numOfTrivialArea);
+      double remain = road_length - (numOfTrivialArea * m_signal_range);
+      if (!(remain>0))
+        numOfTrivialArea--;
 
-      if (numOfTrivialArea_car < numOfTrivialArea)
+      px -= 0.5*m_signal_range;
+      if (px < numOfTrivialArea * m_signal_range)
         {
-          //std::cout<<"RET2"<<std::endl;
-          return numOfTrivialArea_car + 1;//Plus First Area;
+          return (px / m_signal_range) + 1;
         }
-      else//numOfTrivialArea_car == numOfTrivialArea
+      else
         {
-          if (numOfTrivialArea == 0)
+          if (road_length - px < 0.5*m_signal_range)
             {
-              /*
-               * 0.5r ~ <0.5r
-               *         ^here;
-               */
-              if (road_length < m_signal_range)
-                {
-                  //std::cout<<"RET3"<<std::endl;
-                  return 1;
-                }
+              if (isPaddingExist())
+                return numOfTrivialArea + 2;
               else
-                /*
-                 * 0.5r ~ padding ~ 0.5r
-                 *                  ^here
-                 */
-                if (road_length - px < 0.5 * m_signal_range)
-                  {
-                    //std::cout<<"RET4"<<std::endl;
-                    return 2;
-                  }
-                /*
-                 * 0.5r ~ padding ~ 0.5r
-                 *            ^here
-                 */
-                else
-                  {
-                    //std::cout<<"RET5"<<std::endl;
-                    return 1;
-                  }
-
-            }//==0
+                return numOfTrivialArea + 1;
+            }
           else
             {
-              if (last_length < 1e-10) //last_length == 0
-                {
-                  if (road_length - px > 0.5 * m_signal_range)
-                    {
-                      /*
-                       * ~ r ~ 0.5r ~ 0.5r
-                       *        ^here
-                       */
-                      //std::cout<<"RET6"<<std::endl;
-                      return numOfTrivialArea;
-                    }
-                  else
-                    {
-                      /*
-                       * ~ r ~ 0.5r ~ 0.5r
-                       *               ^here
-                       */
-                      //std::cout<<"RET7"<<std::endl;
-                      return numOfTrivialArea + 1;//start from zero
-                    }
-                }
-              else
-                if (last_length > 0.5 * m_signal_range)
-                  {
-                    if (road_length - px > 0.5 * m_signal_range)
-                      {
-                        /*
-                         * ~ r ~ padding ~ 0.5r
-                         *        ^here
-                         */
-                        //std::cout<<"RET8"<<std::endl;
-                        return numOfTrivialArea + 1;
-                      }
-                    else
-                      {
-                        /*
-                         * ~ r ~ padding ~ 0.5r
-                         *                  ^here
-                         */
-                        //std::cout<<"RET9"<<std::endl;
-                        return numOfTrivialArea + 2;
-                      }
-                  }
-                else
-                  {
-                    /*
-                     * ~ r ~ last
-                     *        ^here;
-                     */
-                    //std::cout<<"RET10"<<std::endl;
-                    return numOfTrivialArea + 1;
-                  }
+              return numOfTrivialArea + 1;
             }
         }
+
     }
 
 }

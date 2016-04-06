@@ -31,7 +31,7 @@
 #define SDN_HELLO_HEADER_SIZE 28
 #define SDN_RM_HEADER_SIZE 16
 #define SDN_RM_TUPLE_SIZE 3
-#define SDN_APPOINTMENT_HEADER_SIZE 8
+#define SDN_APPOINTMENT_HEADER_SIZE 12
 
 NS_LOG_COMPONENT_DEFINE ("SdnHeader");
 
@@ -385,6 +385,7 @@ MessageHeader::Appointment::Serialize (Buffer::Iterator start) const
   if (ATField == FORWARDER)
     at = 0xFFFF;
   i.WriteHtonU32 (at);
+  i.WriteHtonU32 (this->NextForwarder.Get());
 }
 
 uint32_t
@@ -399,7 +400,8 @@ MessageHeader::Appointment::Deserialize (Buffer::Iterator start, uint32_t messag
     this->ATField = FORWARDER;
   else
     this->ATField = NORMAL;
-
+  ip_temp = i.ReadNtohU32();
+  this->NextForwarder.Set (ip_temp);
   return (messageSize);
 }
 

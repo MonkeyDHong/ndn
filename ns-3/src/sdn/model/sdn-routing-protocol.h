@@ -290,6 +290,7 @@ private:
   NodeType m_nodetype;
   //Only node type CAR use this(below)
   AppointmentType m_appointmentResult;
+  Ipv4Address m_next_forwarder;
 
 public:
   void SetType (NodeType nt); //implemented

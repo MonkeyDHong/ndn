@@ -86,6 +86,7 @@ private:
 	Ptr<ns3::vanetmobility::VANETmobility> VMo;
 	void ReceiveDataPacket (Ptr<Socket> socket);
 	void SendDataPacket ();
+	void TXTrace (Ptr<const Packet> newpacket);
 };
 
 
