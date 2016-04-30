@@ -23,9 +23,9 @@
 #include "ns3/header.h"
 #include "ppp-header.h"
 
-NS_LOG_COMPONENT_DEFINE ("PppHeader");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("PppHeader");
 
 NS_OBJECT_ENSURE_REGISTERED (PppHeader);
 
@@ -42,6 +42,7 @@ PppHeader::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::PppHeader")
     .SetParent<Header> ()
+    .SetGroupName ("PointToPoint")
     .AddConstructor<PppHeader> ()
   ;
   return tid;
@@ -65,9 +66,6 @@ PppHeader::Print (std::ostream &os) const
       break;
     case 0x0057: /* IPv6 */
       proto = "IPv6 (0x0057)";
-      break;
-    case 0x0077: /* NDN */
-      proto = "NDN (0x0077)";
       break;
     default:
       NS_ASSERT_MSG (false, "PPP Protocol number not defined!");

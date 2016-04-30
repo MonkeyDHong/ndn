@@ -116,7 +116,7 @@ RoutingProtocol::RoutingProtocol ()
     m_packetSequenceNumber (SDN_MAX_SEQ_NUM),
     m_messageSequenceNumber (SDN_MAX_SEQ_NUM),
     m_helloInterval (Seconds(1)),
-    m_rmInterval (Seconds (24)),
+    m_rmInterval (Seconds (10)),
     m_minAPInterval (Seconds (1)),
     m_ipv4 (0),
     m_helloTimer (Timer::CANCEL_ON_DESTROY),
@@ -404,9 +404,9 @@ RoutingProtocol::RecvSDN (Ptr<Socket> socket)
           //Controller Node should discare Hello_Message
           if (GetType() == CAR  )
           {
-        	  if(m_mobility->GetPosition().x<=1000.0 && senderIfaceAddr.Get()%256 == 76)//todo
+        	  if(m_mobility->GetPosition().x<=1000.0 && senderIfaceAddr.Get()%256 == 81)//todo
                   ProcessRm (messageHeader);
-        	  else if(m_mobility->GetPosition().x>1000.0 && senderIfaceAddr.Get()%256 == 79)
+        	  else if(m_mobility->GetPosition().x>1000.0 && senderIfaceAddr.Get()%256 == 84)
         		  ProcessRm (messageHeader);
           }
           break;
@@ -470,9 +470,9 @@ RoutingProtocol::ProcessHM (const sdn::MessageHeader &msg,const Ipv4Address &sen
   //std::cout<<"ProcessHM " << msg.GetOriginatorAddress().Get ()<<std::endl;
   //if(m_CCHmainAddress.Get()%256==244 )
 	 // std::cout<<"244ProcessHM " << msg.GetHello ().GetPosition ().x<<std::endl;
-  if(m_CCHmainAddress.Get()%256==76 && msg.GetHello ().GetPosition ().x>1000.0)//todo
+  if(m_CCHmainAddress.Get()%256==81 && msg.GetHello ().GetPosition ().x>1000.0)//todo
 	  return;
-  if(m_CCHmainAddress.Get()%256==79 && msg.GetHello ().GetPosition ().x<=1000.0)
+  if(m_CCHmainAddress.Get()%256==84 && msg.GetHello ().GetPosition ().x<=1000.0)
  	  return;
   std::map<Ipv4Address, CarInfo>::iterator it = m_lc_info.find (ID);
   //if(m_CCHmainAddress.Get()%256==244 )
@@ -566,7 +566,7 @@ RoutingProtocol::ProcessCRREQ (const sdn::MessageHeader &msg)
   const sdn::MessageHeader::CRREQ &crreq = msg.GetCRREQ ();
   Ipv4Address dest =  crreq.destAddress;
   Ipv4Address source = crreq.sourceAddress;//the car's ip address
-  if(m_CCHmainAddress.Get()%256 == 76)// need to expand//todo
+  if(m_CCHmainAddress.Get()%256 == 81)// need to expand//todo
 	  return;
   if(m_lc_info.find(dest)==m_lc_info.end() || m_lc_info.size()<=1)
 	  return;
@@ -590,7 +590,7 @@ RoutingProtocol::ProcessCRREP (const sdn::MessageHeader &msg)
   Ipv4Address source = crrep.sourceAddress;
   Ipv4Address transfer = crrep.transferAddress;
  //std::cout<<"ProcessCRREP"<<transfer.Get()%256<<" "<<dest.Get()%256<<std::endl;
-  if(m_CCHmainAddress.Get()%256 == 79)
+  if(m_CCHmainAddress.Get()%256 == 84)
 	  return;
   Ipv4Address mask("255.255.255.0");
   //ComputeRoute();

@@ -28,19 +28,21 @@
 #include "ns3/unused.h"
 #include "rocketfuel-topology-reader.h"
 
-NS_LOG_COMPONENT_DEFINE ("RocketfuelTopologyReader");
-
 namespace ns3 {
 
-// NS_OBJECT_ENSURE_REGISTERED (RocketfuelTopologyReader);
+NS_LOG_COMPONENT_DEFINE ("RocketfuelTopologyReader");
 
-// TypeId RocketfuelTopologyReader::GetTypeId (void)
-// {
-//   static TypeId tid = TypeId ("ns3::RocketfuelTopologyReader")
-//     .SetParent<Object> ()
-//   ;
-//   return tid;
-// }
+NS_OBJECT_ENSURE_REGISTERED (RocketfuelTopologyReader);
+
+TypeId RocketfuelTopologyReader::GetTypeId (void)
+{
+  static TypeId tid = TypeId ("ns3::RocketfuelTopologyReader")
+    .SetParent<TopologyReader> ()
+    .SetGroupName ("TopologyReader")
+    .AddConstructor<RocketfuelTopologyReader> ()
+  ;
+  return tid;
+}
 
 RocketfuelTopologyReader::RocketfuelTopologyReader ()
 {

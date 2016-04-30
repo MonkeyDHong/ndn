@@ -90,6 +90,9 @@ private:
 	void ReceiveDataPacket (Ptr<Socket> socket);
 	void SendDataPacket ();
 	void TXTrace (Ptr<const Packet> newpacket);
+
+	std::string m_todo;
+  	std::string m_ds;//DataSet
 };
 
 

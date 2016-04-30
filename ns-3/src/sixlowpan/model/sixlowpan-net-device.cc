@@ -29,7 +29,6 @@
 #include "ns3/uinteger.h"
 #include "ns3/icmpv6-header.h"
 #include "ns3/ipv6-header.h"
-#include "ns3/random-variable.h"
 #include "ns3/mac16-address.h"
 #include "ns3/mac48-address.h"
 #include "ns3/mac64-address.h"
@@ -51,6 +50,7 @@ TypeId SixLowPanNetDevice::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::SixLowPanNetDevice")
     .SetParent<NetDevice> ()
+    .SetGroupName ("SixLowPan")
     .AddConstructor<SixLowPanNetDevice> ()
     .AddAttribute ("Rfc6282", "Use RFC6282 (IPHC) if true, RFC4944 (HC1) otherwise.",
                    BooleanValue (true),
@@ -85,12 +85,21 @@ TypeId SixLowPanNetDevice::GetTypeId (void)
                    UintegerValue (0xFFFF),
                    MakeUintegerAccessor (&SixLowPanNetDevice::m_etherType),
                    MakeUintegerChecker<uint16_t> ())
-    .AddTraceSource ("Tx", "Send - packet (including 6LoWPAN header), SixLoWPanNetDevice Ptr, interface index.",
-                     MakeTraceSourceAccessor (&SixLowPanNetDevice::m_txTrace))
-    .AddTraceSource ("Rx", "Receive - packet (including 6LoWPAN header), SixLoWPanNetDevice Ptr, interface index.",
-                     MakeTraceSourceAccessor (&SixLowPanNetDevice::m_rxTrace))
-    .AddTraceSource ("Drop", "Drop - DropReason, packet (including 6LoWPAN header), SixLoWPanNetDevice Ptr, interface index.",
-                     MakeTraceSourceAccessor (&SixLowPanNetDevice::m_dropTrace))
+    .AddTraceSource ("Tx",
+                     "Send - packet (including 6LoWPAN header), "
+                     "SixLoWPanNetDevice Ptr, interface index.",
+                     MakeTraceSourceAccessor (&SixLowPanNetDevice::m_txTrace),
+                     "ns3::SixLowPanNetDevice::RxTxTracedCallback")
+    .AddTraceSource ("Rx",
+                     "Receive - packet (including 6LoWPAN header), "
+                     "SixLoWPanNetDevice Ptr, interface index.",
+                     MakeTraceSourceAccessor (&SixLowPanNetDevice::m_rxTrace),
+                     "ns3::SixLowPanNetDevice::RxTxTracedCallback")
+    .AddTraceSource ("Drop",
+                     "Drop - DropReason, packet (including 6LoWPAN header), "
+                     "SixLoWPanNetDevice Ptr, interface index.",
+                     MakeTraceSourceAccessor (&SixLowPanNetDevice::m_dropTrace),
+                     "ns3::SixLowPanNetDevice::DropTracedCallback")
   ;
   return tid;
 }
@@ -428,13 +437,25 @@ bool SixLowPanNetDevice::DoSend (Ptr<Packet> packet,
       protocolNumber = m_etherType;
     }
 
-  if (m_useIphc)
+  if (origPacketSize > m_compressionThreshold)
     {
-      origHdrSize += CompressLowPanIphc (packet, m_netDevice->GetAddress (), dest);
+      if (m_useIphc)
+        {
+          NS_LOG_LOGIC ("Compressing packet using IPHC");
+          origHdrSize += CompressLowPanIphc (packet, m_netDevice->GetAddress (), dest);
+        }
+      else
+        {
+          NS_LOG_LOGIC ("Compressing packet using HC1");
+          origHdrSize += CompressLowPanHc1 (packet, m_netDevice->GetAddress (), dest);
+        }
     }
   else
     {
-      origHdrSize += CompressLowPanHc1 (packet, m_netDevice->GetAddress (), dest);
+      NS_LOG_LOGIC ("Compressed packet too short, using uncompressed one");
+      packet = origPacket;
+      SixLowPanIpv6 ipv6UncompressedHdr;
+      packet->AddHeader (ipv6UncompressedHdr);
     }
 
   if ( packet->GetSize () > m_netDevice->GetMtu () )
@@ -462,14 +483,6 @@ bool SixLowPanNetDevice::DoSend (Ptr<Packet> packet,
     }
   else
     {
-      if (packet->GetSize () < m_compressionThreshold)
-        {
-          NS_LOG_LOGIC ("Compressed packet too short, using uncompressed one");
-          packet = origPacket;
-          SixLowPanIpv6 ipv6UncompressedHdr;
-          packet->AddHeader (ipv6UncompressedHdr);
-        }
-
       m_txTrace (packet, m_node->GetObject<SixLowPanNetDevice> (), GetIfIndex ());
       if (doSendFrom)
         {
@@ -1397,7 +1410,7 @@ SixLowPanNetDevice::DecompressLowPanNhc (Ptr<Packet> packet, Address const &src,
 
   uint32_t blobSize;
   uint8_t blobData[260];
-  blobSize = encoding.CopyBlob (blobData + 2, 260);
+  blobSize = encoding.CopyBlob (blobData + 2, 260-2);
   uint8_t paddingSize = 0;
 
   uint8_t actualEncodedHeaderType = encoding.GetEid ();
@@ -1516,6 +1529,10 @@ SixLowPanNetDevice::DecompressLowPanNhc (Ptr<Packet> packet, Address const &src,
           blobData [0] = encoding.GetNextHeader ();
         }
       blobData [1] = 0;
+
+      blob.AddAtStart (blobSize + 2);
+      blob.Begin ().Write (blobData, blobSize + 2);
+
       fragHeader.Deserialize (blob.Begin ());
       packet->AddHeader (fragHeader);
       break;

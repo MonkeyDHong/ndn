@@ -4,7 +4,7 @@ from __future__ import division
 
 LAYOUT_ALGORITHM = 'neato' # ['neato'|'dot'|'twopi'|'circo'|'fdp'|'nop']
 REPRESENT_CHANNELS_AS_NODES = 1
-DEFAULT_NODE_SIZE = 2.0 # default node size in meters
+DEFAULT_NODE_SIZE = 3.0 # default node size in meters
 DEFAULT_TRANSMISSIONS_MEMORY = 5 # default number of of past intervals whose transmissions are remembered
 BITRATE_FONT_SIZE = 10
 
@@ -95,13 +95,7 @@ class Node(PyVizObject):
         self.svg_item = None
         self.svg_align_x = None
         self.svg_align_y = None
-
-        ns3_node = ns.network.NodeList.GetNode(self.node_index)
-        
-        self._label = '%i' % self.node_index
-        node_name = ns.core.Names.FindName (ns3_node)
-        if len(node_name)!=0:
-            self._label += ' (' + node_name + ')'
+        self._label = None
         self._label_canvas_item = None
 
         self._update_appearance() # call this last
@@ -179,7 +173,7 @@ class Node(PyVizObject):
 
             self.emit("query-extra-tooltip-info", lines)
 
-            mob = ns.mobility.MobilityModel.GetMobilityModel (ns3_node)
+            mob = ns3_node.GetObject(ns.mobility.MobilityModel.GetTypeId())
             if mob is not None:
                 lines.append('  <b>Mobility Model</b>: %s' % mob.GetInstanceTypeId().GetName())
 
@@ -263,8 +257,8 @@ class Node(PyVizObject):
 
         if self._label is not None:
             if self._label_canvas_item is None:
-                self._label_canvas_item = goocanvas.Text(visibility_threshold=0.2,
-                                                         font="Sans Serif 6",
+                self._label_canvas_item = goocanvas.Text(visibility_threshold=0.5,
+                                                         font="Sans Serif 10",
                                                          fill_color_rgba=0x808080ff,
                                                          alignment=pango.ALIGN_CENTER,
                                                          anchor=gtk.ANCHOR_N,
@@ -314,7 +308,7 @@ class Node(PyVizObject):
     def has_mobility(self):
         if self._has_mobility is None:
             node = ns.network.NodeList.GetNode(self.node_index)
-            mobility = ns.mobility.MobilityModel.GetMobilityModel (node)
+            mobility = node.GetObject(ns.mobility.MobilityModel.GetTypeId())
             self._has_mobility = (mobility is not None)
         return self._has_mobility
 
@@ -469,8 +463,6 @@ class Visualizer(gobject.GObject):
         self.node_drag_state = None
         self.follow_node = None
         self.shell_window = None
-        self._topology_scan_timeout_id = None
-        self.last_discoverd_node = 0
 
         self.create_gui()
 
@@ -757,24 +749,19 @@ class Visualizer(gobject.GObject):
         self.window.show()
 
     def scan_topology(self):
-        if (self.last_discoverd_node >= ns.network.NodeList.GetNNodes()):
-            return True
-
-        print "scanning topology: [%i, %i) nodes..." % (self.last_discoverd_node, ns.network.NodeList.GetNNodes(),)
+        print "scanning topology: %i nodes..." % (ns.network.NodeList.GetNNodes(),)
         graph = pygraphviz.AGraph()
         seen_nodes = 0
-        for nodeI in range(self.last_discoverd_node, ns.network.NodeList.GetNNodes()):
+        for nodeI in range(ns.network.NodeList.GetNNodes()):
             seen_nodes += 1
-            if seen_nodes > 100:
+            if seen_nodes == 100:
                 print "scan topology... %i nodes visited (%.1f%%)" % (nodeI, 100*nodeI/ns.network.NodeList.GetNNodes())
                 seen_nodes = 0
             node = ns.network.NodeList.GetNode(nodeI)
             node_name = "Node %i" % nodeI
             node_view = self.get_node(nodeI)
 
-            mobility = ns.mobility.MobilityModel.GetMobilityModel (node)
-
-            # print "Mobility type: " + mobility.GetInstanceTypeId().GetName()
+            mobility = node.GetObject(ns.mobility.MobilityModel.GetTypeId())
             if mobility is not None:
                 node_view.set_color("red")
                 pos = mobility.GetPosition()
@@ -797,7 +784,6 @@ class Visualizer(gobject.GObject):
                         if mobility is None:
                             channel_name = "Channel %s" % id(channel)
                             graph.add_edge(node_name, channel_name)
-
                         self.get_channel(channel)
                         self.create_link(self.get_node(nodeI), self.get_channel(channel))
                     else:
@@ -816,18 +802,13 @@ class Visualizer(gobject.GObject):
                         otherDev = channel.GetDevice(otherDevI)
                         otherNode = otherDev.GetNode()
                         otherNodeView = self.get_node(otherNode.GetId())
-
                         if otherNode is not node:
-                            if os.environ.get ('NS_VIS_ASSIGN') is not None:
+                            if mobility is None and not otherNodeView.has_mobility:
                                 other_node_name = "Node %i" % otherNode.GetId()
                                 graph.add_edge(node_name, other_node_name)
-                            else:
-                                if mobility is None and not otherNodeView.has_mobility:
-                                    other_node_name = "Node %i" % otherNode.GetId()
-                                    graph.add_edge(node_name, other_node_name)
                             self.create_link(self.get_node(nodeI), otherNodeView)
 
-        # print "scanning topology: calling graphviz layout"
+        print "scanning topology: calling graphviz layout"
         graph.layout(LAYOUT_ALGORITHM)
         for node in graph.iternodes():
             #print node, "=>", node.attr['pos']
@@ -835,26 +816,12 @@ class Visualizer(gobject.GObject):
             pos_x, pos_y = [float(s) for s in node.attr['pos'].split(',')]
             if node_type == 'Node':
                 obj = self.nodes[int(node_id)]
-
-                # If node reordering is requested
-                if os.environ.get ('NS_VIS_ASSIGN') is not None:
-                    node = ns.network.NodeList.GetNode(int(node_id))
-                    mobility = ns.mobility.MobilityModel.GetMobilityModel (node)
-                    if mobility is not None:
-                        pos = ns.core.Vector (pos_x, pos_y, 0)
-                        mobility.SetPosition (pos)
-
-
             elif node_type == 'Channel':
                 obj = self.channels[int(node_id)]
-
             obj.set_position(pos_x, pos_y)
 
-        # print "scanning topology: all done."
+        print "scanning topology: all done."
         self.emit("topology-scanned")
-        
-        self.last_discoverd_node = ns.network.NodeList.GetNNodes();
-        return True
 
     def get_node(self, index):
         try:
@@ -901,7 +868,7 @@ class Visualizer(gobject.GObject):
         for node in self.nodes.itervalues():
             if node.has_mobility:
                 ns3_node = ns.network.NodeList.GetNode(node.node_index)
-                mobility = ns.mobility.MobilityModel.GetMobilityModel (ns3_node)
+                mobility = ns3_node.GetObject(ns.mobility.MobilityModel.GetTypeId())
                 if mobility is not None:
                     pos = mobility.GetPosition()
                     x, y = transform_point_simulation_to_canvas(pos.x, pos.y)
@@ -1126,11 +1093,6 @@ class Visualizer(gobject.GObject):
         #print "view: done."
         return True
 
-    def _start_topology_scan(self):
-        if self._topology_scan_timeout_id is not None:
-            gobject.source_remove(self._topology_scan_timeout_id)
-        self._topology_scan_timeout_id = gobject.timeout_add (1000, self.scan_topology, priority=PRIORITY_UPDATE_VIEW)        
-
     def _start_update_timer(self):
         if self._update_timeout_id is not None:
             gobject.source_remove(self._update_timeout_id)
@@ -1209,7 +1171,6 @@ class Visualizer(gobject.GObject):
 
     def start(self):
         self.scan_topology()
-        self._start_topology_scan()
         self.window.connect("delete-event", self._quit)
         #self._start_update_timer()
         gobject.timeout_add(200, self.autoscale_view)
@@ -1260,7 +1221,7 @@ class Visualizer(gobject.GObject):
         self.simulation.lock.acquire()
         try:
             ns3_node = ns.network.NodeList.GetNode(node.node_index)
-            mob = ns.mobility.MobilityModel.GetMobilityModel (ns3_node)
+            mob = ns3_node.GetObject(ns.mobility.MobilityModel.GetTypeId())
             if mob is None:
                 return
             if self.node_drag_state is not None:
@@ -1277,7 +1238,7 @@ class Visualizer(gobject.GObject):
         self.simulation.lock.acquire()
         try:
             ns3_node = ns.network.NodeList.GetNode(node.node_index)
-            mob = ns.mobility.MobilityModel.GetMobilityModel (ns3_node)
+            mob = ns3_node.GetObject(ns.mobility.MobilityModel.GetTypeId())
             if mob is None:
                 return False
             if self.node_drag_state is None:

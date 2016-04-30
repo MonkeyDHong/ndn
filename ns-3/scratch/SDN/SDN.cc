@@ -48,8 +48,8 @@ VanetSim::VanetSim()
 	Tx_Routing_Bytes = 0;
 	TX_Routing_Pkts = 0;
 	m_port = 65419;
-	homepath = getenv("HOME");
-	folder="SDN/3roads/v";
+	homepath = ".";//getenv("HOME");
+	folder="SDNData";
 }
 
 VanetSim::~VanetSim()
@@ -91,8 +91,9 @@ void VanetSim::ParseArguments(int argc, char *argv[])
 	cmd.AddValue ("range1", "Range for SCH", range1);
 	cmd.AddValue ("range2", "Range for CCH", range2);
 	cmd.AddValue ("verbose", "turn on all WifiNetDevice log components", verbose);
-	cmd.AddValue ("mod", "0=olsr(DEFAULT) 1=sdn", mod);
+	cmd.AddValue ("mod", "0=olsr 1=sdn(DEFAULT) 2=aodv 3=dsdv 4=dsr", mod);
 	cmd.AddValue ("pmod", "0=Range(DEFAULT) 1=Other", pmod);
+	cmd.AddValue ("ds", "DataSet", m_ds);
 	cmd.Parse (argc,argv);
 
 	// Fix non-unicast data rate to be the same as that of unicast
@@ -106,22 +107,27 @@ void VanetSim::LoadTraffic()
 	if (mod==0)
 	{
 		std::cout<<"Mode: OLSR-N"<<std::endl;
+		m_todo = "OLSR";
 	}
 	else if(mod==1)
 	{
 		std::cout<<"Mode: SDN"<<std::endl;
+		m_todo = "SDN";
 	}
 	else if(mod==2)
 	{
 		std::cout<<"Mode: AODV"<<std::endl;
+		m_todo = "AODV";
 	}
 	else if(mod==3)
 	{
 		std::cout<<"Mode: DSR"<<std::endl;
+		m_todo = "DSR";
 	}
 	else if(mod==4)
 	{
 		std::cout<<"Mode: DSDV"<<std::endl;
+		m_todo = "DSDV";
 	}
 	DIR* dir = NULL;
 	//DIR* subdir=NULL;
@@ -129,13 +135,12 @@ void VanetSim::LoadTraffic()
 	if((dir = opendir(temp.data()))==NULL)
 		NS_FATAL_ERROR("Cannot open input path "<<temp.data()<<", Aborted.");
 
-
-
 	std::string sumo_net = temp + "/input.net.xml";
+
 	std::string sumo_fcd = temp + "/fcd.xml";
 	std::string sumo_route = temp + "/rou.xml";
 
-	std::string output = temp + "/result.txt";
+	std::string output = temp + "/" + m_todo + "_" + m_ds + "_result_new.txt";
 
 	os.open(output.data(),std::ios::out);
 
@@ -143,6 +148,7 @@ void VanetSim::LoadTraffic()
 	VMo=mobilityHelper.GetSumoMObility(sumo_net,sumo_route,sumo_fcd);
 
 	nodeNum = VMo->GetNodeSize();
+	os<<"Mode:  "<<m_todo<<"DataSet:  "<<m_ds<<std::endl;
 }
 
 
@@ -361,9 +367,10 @@ void VanetSim::ConfigApp()
 
 	m_source = Source.Install(m_nodes.Get(nodeNum+1));//Install on Source
 	m_source.Stop(Seconds(duration));//Default Start time is 0.
+	std::string temp = "/NodeList/"+std::to_string (nodeNum+1)+"/ApplicationList/0/$ns3::OnOffApplication/Tx";
 
 	Config::ConnectWithoutContext (
-	    "/NodeList/76/ApplicationList/0/$ns3::OnOffApplication/Tx",
+	    temp,
 	    MakeCallback(&VanetSim::TXTrace, this));
 	/*
 	TypeId tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
@@ -409,12 +416,18 @@ void VanetSim::ProcessOutputs()
 {
 	std::cout<<Tx_Data_Pkts<<std::endl;
 	std::cout<<Rx_Data_Pkts<<std::endl;
+
+	os<<"Result:"<<std::endl;
+  	os<<"Tx_Data_Pkts:   "<<Tx_Data_Pkts<<std::endl;
+        os<<"Rx_Data_Pkts3:   "<<Rx_Data_Pkts<<std::endl;
+
 }
 
 void VanetSim::Run()
 {
 	Simulator::Schedule(Seconds(0.0), &VanetSim::Look_at_clock, this);
 	std::cout << "Starting simulation for " << duration << " s ..."<< std::endl;
+	os << "Starting simulation for " << duration << " s ..."<< std::endl;
 	Simulator::Stop(Seconds(duration));
 	Simulator::Run();
 	Simulator::Destroy();
@@ -424,6 +437,9 @@ void VanetSim::Run()
 void VanetSim::Look_at_clock()
 {
 	std::cout<<"Now:"<<Simulator::Now().GetSeconds()<<std::endl;
+	os<<"Now:  "<<Simulator::Now().GetSeconds()
+  	<<"Tx_Data_Pkts:   "<<Tx_Data_Pkts
+  	<<"Rx_Data_Pkts:   "<<Rx_Data_Pkts<<std::endl;
 	/*Ptr<MobilityModel> Temp = m_nodes.Get (nodeNum)->GetObject<MobilityModel>();
   std::cout<<Temp->GetPosition().x<<","<<Temp->GetPosition().y<<","<<Temp->GetPosition().z<<std::endl;
   std::cout<<Temp->GetVelocity().x<<","<<Temp->GetVelocity().y<<","<<Temp->GetVelocity().z<<std::endl;

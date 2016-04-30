@@ -29,9 +29,9 @@
 #include "point-to-point-channel.h"
 #include "ppp-header.h"
 
-NS_LOG_COMPONENT_DEFINE ("PointToPointNetDevice");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("PointToPointNetDevice");
 
 NS_OBJECT_ENSURE_REGISTERED (PointToPointNetDevice);
 
@@ -40,6 +40,7 @@ PointToPointNetDevice::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::PointToPointNetDevice")
     .SetParent<NetDevice> ()
+    .SetGroupName ("PointToPoint")
     .AddConstructor<PointToPointNetDevice> ()
     .AddAttribute ("Mtu", "The MAC-level Maximum Transmission Unit",
                    UintegerValue (DEFAULT_MTU),
@@ -82,50 +83,74 @@ PointToPointNetDevice::GetTypeId (void)
     // to/from higher layers.
     //
     .AddTraceSource ("MacTx", 
-                     "Trace source indicating a packet has arrived for transmission by this device",
-                     MakeTraceSourceAccessor (&PointToPointNetDevice::m_macTxTrace))
+                     "Trace source indicating a packet has arrived "
+                     "for transmission by this device",
+                     MakeTraceSourceAccessor (&PointToPointNetDevice::m_macTxTrace),
+                     "ns3::Packet::TracedCallback")
     .AddTraceSource ("MacTxDrop", 
-                     "Trace source indicating a packet has been dropped by the device before transmission",
-                     MakeTraceSourceAccessor (&PointToPointNetDevice::m_macTxDropTrace))
+                     "Trace source indicating a packet has been dropped "
+                     "by the device before transmission",
+                     MakeTraceSourceAccessor (&PointToPointNetDevice::m_macTxDropTrace),
+                     "ns3::Packet::TracedCallback")
     .AddTraceSource ("MacPromiscRx", 
-                     "A packet has been received by this device, has been passed up from the physical layer "
-                     "and is being forwarded up the local protocol stack.  This is a promiscuous trace,",
-                     MakeTraceSourceAccessor (&PointToPointNetDevice::m_macPromiscRxTrace))
+                     "A packet has been received by this device, "
+                     "has been passed up from the physical layer "
+                     "and is being forwarded up the local protocol stack.  "
+                     "This is a promiscuous trace,",
+                     MakeTraceSourceAccessor (&PointToPointNetDevice::m_macPromiscRxTrace),
+                     "ns3::Packet::TracedCallback")
     .AddTraceSource ("MacRx", 
-                     "A packet has been received by this device, has been passed up from the physical layer "
-                     "and is being forwarded up the local protocol stack.  This is a non-promiscuous trace,",
-                     MakeTraceSourceAccessor (&PointToPointNetDevice::m_macRxTrace))
+                     "A packet has been received by this device, "
+                     "has been passed up from the physical layer "
+                     "and is being forwarded up the local protocol stack.  "
+                     "This is a non-promiscuous trace,",
+                     MakeTraceSourceAccessor (&PointToPointNetDevice::m_macRxTrace),
+                     "ns3::Packet::TracedCallback")
 #if 0
     // Not currently implemented for this device
     .AddTraceSource ("MacRxDrop", 
-                     "Trace source indicating a packet was dropped before being forwarded up the stack",
-                     MakeTraceSourceAccessor (&PointToPointNetDevice::m_macRxDropTrace))
+                     "Trace source indicating a packet was dropped "
+                     "before being forwarded up the stack",
+                     MakeTraceSourceAccessor (&PointToPointNetDevice::m_macRxDropTrace),
+                     "ns3::Packet::TracedCallback")
 #endif
     //
     // Trace souces at the "bottom" of the net device, where packets transition
     // to/from the channel.
     //
     .AddTraceSource ("PhyTxBegin", 
-                     "Trace source indicating a packet has begun transmitting over the channel",
-                     MakeTraceSourceAccessor (&PointToPointNetDevice::m_phyTxBeginTrace))
+                     "Trace source indicating a packet has begun "
+                     "transmitting over the channel",
+                     MakeTraceSourceAccessor (&PointToPointNetDevice::m_phyTxBeginTrace),
+                     "ns3::Packet::TracedCallback")
     .AddTraceSource ("PhyTxEnd", 
-                     "Trace source indicating a packet has been completely transmitted over the channel",
-                     MakeTraceSourceAccessor (&PointToPointNetDevice::m_phyTxEndTrace))
+                     "Trace source indicating a packet has been "
+                     "completely transmitted over the channel",
+                     MakeTraceSourceAccessor (&PointToPointNetDevice::m_phyTxEndTrace),
+                     "ns3::Packet::TracedCallback")
     .AddTraceSource ("PhyTxDrop", 
-                     "Trace source indicating a packet has been dropped by the device during transmission",
-                     MakeTraceSourceAccessor (&PointToPointNetDevice::m_phyTxDropTrace))
+                     "Trace source indicating a packet has been "
+                     "dropped by the device during transmission",
+                     MakeTraceSourceAccessor (&PointToPointNetDevice::m_phyTxDropTrace),
+                     "ns3::Packet::TracedCallback")
 #if 0
     // Not currently implemented for this device
     .AddTraceSource ("PhyRxBegin", 
-                     "Trace source indicating a packet has begun being received by the device",
-                     MakeTraceSourceAccessor (&PointToPointNetDevice::m_phyRxBeginTrace))
+                     "Trace source indicating a packet has begun "
+                     "being received by the device",
+                     MakeTraceSourceAccessor (&PointToPointNetDevice::m_phyRxBeginTrace),
+                     "ns3::Packet::TracedCallback")
 #endif
     .AddTraceSource ("PhyRxEnd", 
-                     "Trace source indicating a packet has been completely received by the device",
-                     MakeTraceSourceAccessor (&PointToPointNetDevice::m_phyRxEndTrace))
+                     "Trace source indicating a packet has been "
+                     "completely received by the device",
+                     MakeTraceSourceAccessor (&PointToPointNetDevice::m_phyRxEndTrace),
+                     "ns3::Packet::TracedCallback")
     .AddTraceSource ("PhyRxDrop", 
-                     "Trace source indicating a packet has been dropped by the device during reception",
-                     MakeTraceSourceAccessor (&PointToPointNetDevice::m_phyRxDropTrace))
+                     "Trace source indicating a packet has been "
+                     "dropped by the device during reception",
+                     MakeTraceSourceAccessor (&PointToPointNetDevice::m_phyRxDropTrace),
+                     "ns3::Packet::TracedCallback")
 
     //
     // Trace sources designed to simulate a packet sniffer facility (tcpdump).
@@ -133,11 +158,15 @@ PointToPointNetDevice::GetTypeId (void)
     // non-promiscuous traces in a point-to-point link.
     //
     .AddTraceSource ("Sniffer", 
-                     "Trace source simulating a non-promiscuous packet sniffer attached to the device",
-                     MakeTraceSourceAccessor (&PointToPointNetDevice::m_snifferTrace))
+                    "Trace source simulating a non-promiscuous packet sniffer "
+                     "attached to the device",
+                     MakeTraceSourceAccessor (&PointToPointNetDevice::m_snifferTrace),
+                     "ns3::Packet::TracedCallback")
     .AddTraceSource ("PromiscSniffer", 
-                     "Trace source simulating a promiscuous packet sniffer attached to the device",
-                     MakeTraceSourceAccessor (&PointToPointNetDevice::m_promiscSnifferTrace))
+                     "Trace source simulating a promiscuous packet sniffer "
+                     "attached to the device",
+                     MakeTraceSourceAccessor (&PointToPointNetDevice::m_promiscSnifferTrace),
+                     "ns3::Packet::TracedCallback")
   ;
   return tid;
 }
@@ -178,6 +207,16 @@ PointToPointNetDevice::ProcessHeader (Ptr<Packet> p, uint16_t& param)
 }
 
 void
+PointToPointNetDevice::DoInitialize (void)
+{
+  NS_LOG_FUNCTION (this);
+  // The traffic control layer, if installed, has aggregated a
+  // NetDeviceQueueInterface object to this device
+  m_queueInterface = GetObject<NetDeviceQueueInterface> ();
+  NetDevice::DoInitialize ();
+}
+
+void
 PointToPointNetDevice::DoDispose ()
 {
   NS_LOG_FUNCTION (this);
@@ -185,6 +224,8 @@ PointToPointNetDevice::DoDispose ()
   m_channel = 0;
   m_receiveErrorModel = 0;
   m_currentPkt = 0;
+  m_queue = 0;
+  m_queueInterface = 0;
   NetDevice::DoDispose ();
 }
 
@@ -218,7 +259,7 @@ PointToPointNetDevice::TransmitStart (Ptr<Packet> p)
   m_currentPkt = p;
   m_phyTxBeginTrace (m_currentPkt);
 
-  Time txTime = Seconds (m_bps.CalculateTxTime (p->GetSize ()));
+  Time txTime = m_bps.CalculateBytesTxTime (p->GetSize ());
   Time txCompleteTime = txTime + m_tInterframeGap;
 
   NS_LOG_LOGIC ("Schedule TransmitCompleteEvent in " << txCompleteTime.GetSeconds () << "sec");
@@ -251,18 +292,34 @@ PointToPointNetDevice::TransmitComplete (void)
   m_phyTxEndTrace (m_currentPkt);
   m_currentPkt = 0;
 
-  Ptr<Packet> p = m_queue->Dequeue ();
-  if (p == 0)
+  Ptr<NetDeviceQueue> txq;
+  if (m_queueInterface)
+  {
+    txq = m_queueInterface->GetTxQueue (0);
+  }
+
+  Ptr<QueueItem> item = m_queue->Dequeue ();
+  if (item == 0)
     {
-      //
-      // No packet was on the queue, so we just exit.
-      //
+      NS_LOG_LOGIC ("No pending packets in device queue after tx complete");
+      if (txq)
+      {
+        txq->Wake ();
+      }
       return;
     }
 
   //
-  // Got another packet off of the queue, so start the transmit process agin.
+  // Got another packet off of the queue, so start the transmit process again.
+  // If the queue was stopped, start it again. Note that we cannot wake the upper
+  // layers because otherwise a packet is sent to the device while the machine
+  // state is busy, thus causing the assert in TransmitStart to fail.
   //
+  if (txq && txq->IsStopped ())
+    {
+      txq->Start ();
+    }
+  Ptr<Packet> p = item->GetPacket ();
   m_snifferTrace (p);
   m_promiscSnifferTrace (p);
   TransmitStart (p);
@@ -481,6 +538,14 @@ PointToPointNetDevice::Send (
   const Address &dest, 
   uint16_t protocolNumber)
 {
+  Ptr<NetDeviceQueue> txq;
+  if (m_queueInterface)
+  {
+    txq = m_queueInterface->GetTxQueue (0);
+  }
+
+  NS_ASSERT_MSG (!txq || !txq->IsStopped (), "Send should not be called when the device is stopped");
+
   NS_LOG_FUNCTION (this << packet << dest << protocolNumber);
   NS_LOG_LOGIC ("p=" << packet << ", dest=" << &dest);
   NS_LOG_LOGIC ("UID is " << packet->GetUid ());
@@ -506,14 +571,14 @@ PointToPointNetDevice::Send (
   //
   // We should enqueue and dequeue the packet to hit the tracing hooks.
   //
-  if (m_queue->Enqueue (packet))
+  if (m_queue->Enqueue (Create<QueueItem> (packet)))
     {
       //
       // If the channel is ready for transition we send the packet right now
       // 
       if (m_txMachineState == READY)
         {
-          packet = m_queue->Dequeue ();
+          packet = m_queue->Dequeue ()->GetPacket ();
           m_snifferTrace (packet);
           m_promiscSnifferTrace (packet);
           return TransmitStart (packet);
@@ -521,8 +586,13 @@ PointToPointNetDevice::Send (
       return true;
     }
 
-  // Enqueue may fail (overflow)
+  // Enqueue may fail (overflow). Stop the tx queue, so that the upper layers
+  // do not send packets until there is room in the queue again.
   m_macTxDropTrace (packet);
+  if (txq)
+  {
+    txq->Stop ();
+  }
   return false;
 }
 
@@ -623,7 +693,6 @@ PointToPointNetDevice::PppToEther (uint16_t proto)
     {
     case 0x0021: return 0x0800;   //IPv4
     case 0x0057: return 0x86DD;   //IPv6
-    case 0x0077: return 0x7777;   //NDN
     default: NS_ASSERT_MSG (false, "PPP Protocol number not defined!");
     }
   return 0;
@@ -637,7 +706,6 @@ PointToPointNetDevice::EtherToPpp (uint16_t proto)
     {
     case 0x0800: return 0x0021;   //IPv4
     case 0x86DD: return 0x0057;   //IPv6
-    case 0x7777: return 0x0077;   //NDN
     default: NS_ASSERT_MSG (false, "PPP Protocol number not defined!");
     }
   return 0;

@@ -34,9 +34,9 @@
 #include "ns3/trace-helper.h"
 #include "point-to-point-helper.h"
 
-NS_LOG_COMPONENT_DEFINE ("PointToPointHelper");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("PointToPointHelper");
 
 PointToPointHelper::PointToPointHelper ()
 {
@@ -53,20 +53,14 @@ PointToPointHelper::SetQueue (std::string type,
                               std::string n3, const AttributeValue &v3,
                               std::string n4, const AttributeValue &v4)
 {
-  m_queueFactory = ObjectFactory (type); // to reset any previously set attributes, if any
+  m_queueFactory.SetTypeId (type);
   m_queueFactory.Set (n1, v1);
   m_queueFactory.Set (n2, v2);
   m_queueFactory.Set (n3, v3);
   m_queueFactory.Set (n4, v4);
 }
 
-void
-PointToPointHelper::SetQueueAttribute (std::string name, const AttributeValue &value)
-{
-  m_queueFactory.Set (name, value);
-}
-
-void
+void 
 PointToPointHelper::SetDeviceAttribute (std::string n1, const AttributeValue &v1)
 {
   m_deviceFactory.Set (n1, v1);

@@ -27,12 +27,6 @@
 #include <stdlib.h>
 #include <errno.h>
 
-// linux man page specifies <string.h> for strerror
-#include <string.h>
-
-// OSX man page asks for <stdio.h> for strerror
-#include <stdio.h>
-
 #include <sys/socket.h>
 
 namespace ns3 {
@@ -60,6 +54,7 @@ extern int gVerbose;
     }
 
 /**
+ * \ingroup fd-net-device
  * \brief Send the file descriptor back to the code that invoked the creation.
  *
  * \param path The socket address information from the Unix socket we use

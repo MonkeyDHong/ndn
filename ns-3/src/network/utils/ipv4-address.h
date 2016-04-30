@@ -34,6 +34,8 @@ class Ipv4Mask;
  * \ingroup address
  *
  * \brief Ipv4 addresses are stored in host order in this class.
+ *
+ * \see attribute_Ipv4Address
  */
 class Ipv4Address {
 public:
@@ -103,6 +105,14 @@ public:
    * \param os The output stream to which this Ipv4Address is printed
    */
   void Print (std::ostream &os) const;
+  /**
+    * \return true if address is 0.0.0.0; false otherwise
+    */
+  bool IsAny (void) const;
+  /**
+    * \return true if address is 127.0.0.1; false otherwise
+    */
+  bool IsLocalhost (void) const;
   /**
     * \return true if address is 255.255.255.255; false otherwise
     */
@@ -218,6 +228,8 @@ private:
  * The constructor takes arguments according to a few formats. 
  * Ipv4Mask ("255.255.255.255"), Ipv4Mask ("/32"), and Ipv4Mask (0xffffffff)
  * are all equivalent.
+ *
+ * \see attribute_Ipv4Mask
  */
 class Ipv4Mask {
 public:
@@ -289,17 +301,8 @@ private:
   uint32_t m_mask; //!< IP mask
 };
 
-/**
- * \class ns3::Ipv4AddressValue
- * \brief hold objects of type ns3::Ipv4Address
- */
-/**
- * \class ns3::Ipv4MaskValue
- * \brief hold objects of type ns3::Ipv4Mask
- */
-
-ATTRIBUTE_HELPER_HEADER (Ipv4Address);  //!< Macro to make help make class an ns-3 attribute
-ATTRIBUTE_HELPER_HEADER (Ipv4Mask);     //!< Macro to make help make class an ns-3 attribute
+ATTRIBUTE_HELPER_HEADER (Ipv4Address);
+ATTRIBUTE_HELPER_HEADER (Ipv4Mask);
 
 /**
  * \brief Stream insertion operator.

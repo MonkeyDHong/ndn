@@ -28,6 +28,7 @@ ConstantPositionMobilityModel::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::ConstantPositionMobilityModel")
     .SetParent<MobilityModel> ()
+    .SetGroupName ("Mobility")
     .AddConstructor<ConstantPositionMobilityModel> ()
   ;
   return tid;
@@ -43,7 +44,6 @@ ConstantPositionMobilityModel::~ConstantPositionMobilityModel ()
 Vector
 ConstantPositionMobilityModel::DoGetPosition (void) const
 {
-  //std::cout<<"ConstantPositionMobilityModel::DoGetPosition"<<std::endl;
   return m_position;
 }
 void
@@ -55,7 +55,6 @@ ConstantPositionMobilityModel::DoSetPosition (const Vector &position)
 Vector
 ConstantPositionMobilityModel::DoGetVelocity (void) const
 {
-  //std::cout<<"ConstantPositionMobilityModel::DoGetVelocity"<<std::endl;
   return Vector (0.0, 0.0, 0.0);
 }
 

@@ -27,9 +27,9 @@
 #include "ns3/config.h"
 #include "ns3/test.h"
 
-NS_LOG_COMPONENT_DEFINE ("WaypointMobilityModel");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("WaypointMobilityModel");
 
 NS_OBJECT_ENSURE_REGISTERED (WaypointMobilityModel);
 
@@ -151,11 +151,6 @@ WaypointMobilityModel::Update (void) const
       newWaypoint = true;
 
       const double t_span = (m_next.time - m_current.time).GetSeconds ();
-      //std::cout<<"Cur:"<<m_current.time<<",Next:"<<m_next.time<<std::endl;
-      //std::cout<<m_next.position.x<<std::endl;
-      //std::cout<<m_next.position.y<<std::endl;
-      //std::cout<<m_current.position.x<<std::endl;
-      //std::cout<<m_current.position.y<<std::endl;
       NS_ASSERT (t_span > 0);
       m_velocity.x = (m_next.position.x - m_current.position.x) / t_span;
       m_velocity.y = (m_next.position.y - m_current.position.y) / t_span;
@@ -175,20 +170,16 @@ WaypointMobilityModel::Update (void) const
     {
       NotifyCourseChange ();
     }
-  //std::cout<<"WaypointMobilityModel::Update "<<now.GetSeconds ()<<",  m_velocity:"<<m_velocity.x
-  //    <<","<<m_velocity.y<<","<<m_velocity.z<<std::endl;
 }
 Vector
 WaypointMobilityModel::DoGetPosition (void) const
 {
   Update ();
-  //std::cout<<"WaypointMobilityModel::DoGetPosition"<<std::endl;
   return m_current.position;
 }
 void
 WaypointMobilityModel::DoSetPosition (const Vector &position)
 {
-  //std::cout<<"WaypointMobilityModel::DoSetPosition"<<std::endl;
   const Time now = Simulator::Now ();
 
   if ( m_first && m_initialPositionIsWaypoint )
@@ -219,7 +210,6 @@ WaypointMobilityModel::EndMobility (void)
 Vector
 WaypointMobilityModel::DoGetVelocity (void) const
 {
-  //std::cout<<"WaypointMobilityModel::DoGetVelocity "<<m_velocity.x<<","<<m_velocity.y<<","<<m_velocity.z<<std::endl;
   return m_velocity;
 }
 

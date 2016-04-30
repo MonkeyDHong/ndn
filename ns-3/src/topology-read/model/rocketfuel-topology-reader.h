@@ -21,6 +21,7 @@
 #ifndef ROCKETFUEL_TOPOLOGY_READER_H
 #define ROCKETFUEL_TOPOLOGY_READER_H
 
+#include "ns3/nstime.h"
 #include "topology-reader.h"
 
 namespace ns3 {
@@ -42,7 +43,11 @@ namespace ns3 {
 class RocketfuelTopologyReader : public TopologyReader
 {
 public:
-  // static TypeId GetTypeId (void);
+  /**
+   * \brief Get the type ID.
+   * \return The object TypeId
+   */
+  static TypeId GetTypeId (void);
 
   RocketfuelTopologyReader ();
   virtual ~RocketfuelTopologyReader ();
@@ -55,7 +60,7 @@ public:
    * so the input file is read line by line to figure out how many links
    * and nodes are in the topology.
    *
-   * \return the container of the nodes created (or empty container if there was an error)
+   * \return The container of the nodes created (or empty container if there was an error)
    */
   virtual NodeContainer Read (void);
 
@@ -66,9 +71,9 @@ private:
    * Parser for the *.cch file available at:
    * http://www.cs.washington.edu/research/networking/rocketfuel/maps/rocketfuel_maps_cch.tar.gz
    *
-   * \param argc argument counter
-   * \param argv argument vector
-   * \return the container of the nodes created (or empty container if there was an error)
+   * \param [in] argc Argument counter.
+   * \param [in] argv Argument vector.
+   * \return The container of the nodes created (or empty container if there was an error).
    */
   NodeContainer GenerateFromMapsFile (int argc, char *argv[]);
 
@@ -78,9 +83,9 @@ private:
    * Parser for the weights.* file available at:
    * http://www.cs.washington.edu/research/networking/rocketfuel/maps/weights-dist.tar.gz
    *
-   * \param argc argument counter
-   * \param argv argument vector
-   * \return the container of the nodes created (or empty container if there was an error)
+   * \param [in] argc Argument counter.
+   * \param [in] argv Argument vector.
+   * \return The container of the nodes created (or empty container if there was an error).
    */
   NodeContainer GenerateFromWeightsFile (int argc, char *argv[]);
 
@@ -98,25 +103,25 @@ private:
   /**
    * \brief Classifies the file type according to its content.
    *
-   * \return the file type (RF_MAPS, RF_WEIGHTS, or RF_UNKNOWN)
+   * \return The file type (RF_MAPS, RF_WEIGHTS, or RF_UNKNOWN)
    */
   enum RF_FileType GetFileType (const char *);
 
-  int m_linksNumber; //!< number of links
-  int m_nodesNumber; //!< number of nodes
-  std::map<std::string, Ptr<Node> > m_nodeMap; //!< map of the nodes (name, node)
+  int m_linksNumber; //!< Number of links.
+  int m_nodesNumber; //!< Number of nodes.
+  std::map<std::string, Ptr<Node> > m_nodeMap; //!< Map of the nodes (name, node).
 
 private:
   /**
    * \brief Copy constructor
    *
-   * Defined and unimplemented to avoid misuse
+   * Defined and unimplemented to avoid misuse.
    */
   RocketfuelTopologyReader (const RocketfuelTopologyReader&);
   /**
    * \brief Copy constructor
    *
-   * Defined and unimplemented to avoid misuse
+   * Defined and unimplemented to avoid misuse.
    * \returns
    */
   RocketfuelTopologyReader& operator= (const RocketfuelTopologyReader&);

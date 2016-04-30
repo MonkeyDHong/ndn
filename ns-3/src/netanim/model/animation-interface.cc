@@ -51,9 +51,9 @@
 #include "ns3/ipv4-routing-protocol.h"
 #include "ns3/energy-source-container.h"
 
-NS_LOG_COMPONENT_DEFINE ("AnimationInterface");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("AnimationInterface");
 
 // Globals
 
@@ -65,19 +65,19 @@ static bool initialized = false;
 AnimationInterface::AnimationInterface (const std::string fn)
   : m_f (0),
     m_routingF (0),
-    m_mobilityPollInterval (Seconds (0.25)),
+    m_mobilityPollInterval (Seconds (0.25)), 
     m_outputFileName (fn),
-    gAnimUid (0),
-    m_writeCallback (0),
-    m_started (false),
-    m_enablePacketMetadata (false),
-    m_startTime (Seconds (0)),
+    gAnimUid (0), 
+    m_writeCallback (0), 
+    m_started (false), 
+    m_enablePacketMetadata (false), 
+    m_startTime (Seconds (0)), 
     m_stopTime (Seconds (3600 * 1000)),
-    m_maxPktsPerFile (MAX_PKTS_PER_TRACE_FILE),
+    m_maxPktsPerFile (MAX_PKTS_PER_TRACE_FILE), 
     m_originalFileName (fn),
-    m_routingStopTime (Seconds (0)),
+    m_routingStopTime (Seconds (0)), 
     m_routingFileName (""),
-    m_routingPollInterval (Seconds (5)),
+    m_routingPollInterval (Seconds (5)), 
     m_trackPackets (true)
 {
   initialized = true;
@@ -89,7 +89,7 @@ AnimationInterface::~AnimationInterface ()
   StopAnimation ();
 }
 
-void
+void 
 AnimationInterface::SkipPacketTracing ()
 {
   m_trackPackets = false;
@@ -111,7 +111,7 @@ AnimationInterface::EnableWifiPhyCounters (Time startTime, Time stopTime, Time p
       UpdateNodeCounter (m_wifiPhyRxDropCounterId, n->GetId (), 0);
     }
   Simulator::Schedule (startTime, &AnimationInterface::TrackWifiPhyCounters, this);
-
+ 
 }
 
 void
@@ -180,7 +180,7 @@ AnimationInterface::EnableIpv4L3ProtocolCounters (Time startTime, Time stopTime,
   Simulator::Schedule (startTime, &AnimationInterface::TrackIpv4L3ProtocolCounters, this);
 }
 
-AnimationInterface &
+AnimationInterface & 
 AnimationInterface::EnableIpv4RouteTracking (std::string fileName, Time startTime, Time stopTime, Time pollInterval)
 {
   SetOutputFile (fileName, true);
@@ -191,14 +191,14 @@ AnimationInterface::EnableIpv4RouteTracking (std::string fileName, Time startTim
   return *this;
 }
 
-AnimationInterface &
+AnimationInterface & 
 AnimationInterface::EnableIpv4RouteTracking (std::string fileName, Time startTime, Time stopTime, NodeContainer nc, Time pollInterval)
 {
   m_routingNc = nc;
   return EnableIpv4RouteTracking (fileName, startTime, stopTime, pollInterval);
 }
 
-AnimationInterface &
+AnimationInterface & 
 AnimationInterface::AddSourceDestination (uint32_t fromNodeId, std::string ipv4Address)
 {
   Ipv4RouteTrackElement element = { ipv4Address, fromNodeId };
@@ -206,43 +206,43 @@ AnimationInterface::AddSourceDestination (uint32_t fromNodeId, std::string ipv4A
   return *this;
 }
 
-void
+void 
 AnimationInterface::SetStartTime (Time t)
 {
   m_startTime = t;
 }
 
-void
+void 
 AnimationInterface::SetStopTime (Time t)
 {
   m_stopTime = t;
 }
 
-void
+void 
 AnimationInterface::SetMaxPktsPerTraceFile (uint64_t maxPacketsPerFile)
 {
   m_maxPktsPerFile = maxPacketsPerFile;
 }
 
-uint32_t
+uint32_t 
 AnimationInterface::AddNodeCounter (std::string counterName, CounterType counterType)
 {
   m_nodeCounters.push_back (counterName);
   uint32_t counterId = m_nodeCounters.size () - 1; // counter ID is zero-indexed
   WriteXmlAddNodeCounter (counterId, counterName, counterType);
-  return counterId;
+  return counterId; 
 }
 
-uint32_t
+uint32_t 
 AnimationInterface::AddResource (std::string resourcePath)
 {
   m_resources.push_back (resourcePath);
   uint32_t resourceId = m_resources.size () -  1; // resource ID is zero-indexed
   WriteXmlAddResource (resourceId, resourcePath);
-  return resourceId;
+  return resourceId; 
 }
 
-void
+void 
 AnimationInterface::EnablePacketMetadata (bool enable)
 {
    m_enablePacketMetadata = enable;
@@ -252,38 +252,38 @@ AnimationInterface::EnablePacketMetadata (bool enable)
      }
 }
 
-bool
+bool 
 AnimationInterface::IsInitialized ()
 {
   return initialized;
 }
 
-bool
+bool 
 AnimationInterface::IsStarted ()
 {
   return m_started;
 }
 
-void
+void 
 AnimationInterface::SetAnimWriteCallback (AnimWriteCallback cb)
 {
   m_writeCallback = cb;
 }
 
-void
+void 
 AnimationInterface::ResetAnimWriteCallback ()
 {
   m_writeCallback = 0;
 }
 
-void
+void 
 AnimationInterface::SetMobilityPollInterval (Time t)
 {
   m_mobilityPollInterval = t;
 }
 
 
-void
+void 
 AnimationInterface::SetConstantPosition (Ptr <Node> n, double x, double y, double z)
 {
   NS_ASSERT (n);
@@ -299,7 +299,7 @@ AnimationInterface::SetConstantPosition (Ptr <Node> n, double x, double y, doubl
 
 }
 
-void
+void 
 AnimationInterface::UpdateNodeImage (uint32_t nodeId, uint32_t resourceId)
 {
   NS_LOG_INFO ("Setting node image for Node Id:" << nodeId);
@@ -310,7 +310,7 @@ AnimationInterface::UpdateNodeImage (uint32_t nodeId, uint32_t resourceId)
   WriteXmlUpdateNodeImage (nodeId, resourceId);
 }
 
-void
+void 
 AnimationInterface::UpdateNodeCounter (uint32_t nodeCounterId, uint32_t nodeId, double counter)
 {
   if (nodeCounterId > (m_nodeCounters.size () - 1))
@@ -320,7 +320,7 @@ AnimationInterface::UpdateNodeCounter (uint32_t nodeCounterId, uint32_t nodeId, 
   WriteXmlUpdateNodeCounter (nodeCounterId, nodeId, counter);
 }
 
-void
+void 
 AnimationInterface::SetBackgroundImage (std::string fileName, double x, double y, double scaleX, double scaleY, double opacity)
 {
   if ((opacity < 0) || (opacity > 1))
@@ -330,7 +330,7 @@ AnimationInterface::SetBackgroundImage (std::string fileName, double x, double y
   WriteXmlUpdateBackground (fileName, x, y, scaleX, scaleY, opacity);
 }
 
-void
+void 
 AnimationInterface::UpdateNodeSize (uint32_t nodeId, double width, double height)
 {
   AnimationInterface::NodeSize s = { width, height };
@@ -338,30 +338,30 @@ AnimationInterface::UpdateNodeSize (uint32_t nodeId, double width, double height
   WriteXmlUpdateNodeSize (nodeId, s.width, s.height);
 }
 
-void
+void 
 AnimationInterface::UpdateNodeColor (Ptr <Node> n, uint8_t r, uint8_t g, uint8_t b)
 {
   UpdateNodeColor (n->GetId (), r, g, b);
 }
 
-void
+void 
 AnimationInterface::UpdateNodeColor (uint32_t nodeId, uint8_t r, uint8_t g, uint8_t b)
 {
   NS_ASSERT (NodeList::GetNode (nodeId));
-  NS_LOG_INFO ("Setting node color for Node Id:" << nodeId);
+  NS_LOG_INFO ("Setting node color for Node Id:" << nodeId); 
   Rgb rgb = {r, g, b};
   m_nodeColors[nodeId] = rgb;
   WriteXmlUpdateNodeColor (nodeId, r, g, b);
 }
 
-void
+void 
 AnimationInterface::UpdateLinkDescription (uint32_t fromNode, uint32_t toNode,
                                                 std::string linkDescription)
 {
   WriteXmlUpdateLink (fromNode, toNode, linkDescription);
 }
 
-void
+void 
 AnimationInterface::UpdateLinkDescription (Ptr <Node> fromNode, Ptr <Node> toNode,
                                                 std::string linkDescription)
 {
@@ -370,13 +370,13 @@ AnimationInterface::UpdateLinkDescription (Ptr <Node> fromNode, Ptr <Node> toNod
   WriteXmlUpdateLink (fromNode->GetId (), toNode->GetId (), linkDescription);
 }
 
-void
+void 
 AnimationInterface::UpdateNodeDescription (Ptr <Node> n, std::string descr)
 {
   UpdateNodeDescription (n->GetId (), descr);
 }
 
-void
+void 
 AnimationInterface::UpdateNodeDescription (uint32_t nodeId, std::string descr)
 {
   NS_ASSERT (NodeList::GetNode (nodeId));
@@ -387,7 +387,7 @@ AnimationInterface::UpdateNodeDescription (uint32_t nodeId, std::string descr)
 // Private methods
 
 
-double
+double 
 AnimationInterface::GetNodeEnergyFraction (Ptr <const Node> node) const
 {
   const EnergyFractionMap::const_iterator fractionIter = m_nodeEnergyFraction.find (node->GetId ());
@@ -395,18 +395,17 @@ AnimationInterface::GetNodeEnergyFraction (Ptr <const Node> node) const
   return fractionIter->second;
 }
 
-void
+void 
 AnimationInterface::MobilityCourseChangeTrace (Ptr <const MobilityModel> mobility)
 {
-  if (!m_started || !IsInTimeWindow () || !m_trackPackets)
-    return;
+  CHECK_STARTED_INTIMEWINDOW;
   Ptr <Node> n = mobility->GetObject <Node> ();
   NS_ASSERT (n);
   Vector v ;
   if (!mobility)
     {
       v = GetPosition (n);
-    }
+    } 
   else
     {
       v = mobility->GetPosition ();
@@ -415,26 +414,27 @@ AnimationInterface::MobilityCourseChangeTrace (Ptr <const MobilityModel> mobilit
   WriteXmlUpdateNodePosition (n->GetId (), v.x, v.y);
 }
 
-bool
+bool 
 AnimationInterface::NodeHasMoved (Ptr <Node> n, Vector newLocation)
 {
   Vector oldLocation = GetPosition (n);
+  bool moved = true;
   if ((ceil (oldLocation.x) == ceil (newLocation.x)) &&
     (ceil (oldLocation.y) == ceil (newLocation.y)))
     {
-      return false;
+      moved = false;
     }
   else
     {
-      return true;
+      moved = true;
     }
+  return moved;
 }
 
-void
+void 
 AnimationInterface::MobilityAutoCheck ()
 {
-  if (!m_started || !IsInTimeWindow ())
-    return;
+  CHECK_STARTED_INTIMEWINDOW;
   std::vector <Ptr <Node> > MovedNodes = GetMovedNodes ();
   for (uint32_t i = 0; i < MovedNodes.size (); i++)
     {
@@ -453,7 +453,7 @@ AnimationInterface::MobilityAutoCheck ()
     }
 }
 
-std::vector <Ptr <Node> >
+std::vector <Ptr <Node> >  
 AnimationInterface::GetMovedNodes ()
 {
   std::vector < Ptr <Node> > movedNodes;
@@ -484,11 +484,13 @@ AnimationInterface::GetMovedNodes ()
   return movedNodes;
 }
 
-int
+int 
 AnimationInterface::WriteN (const std::string& st, FILE * f)
 {
   if (!f)
-    return 0;
+    {
+      return 0;
+    }
   if (m_writeCallback)
     {
       m_writeCallback (st.c_str ());
@@ -496,11 +498,13 @@ AnimationInterface::WriteN (const std::string& st, FILE * f)
   return WriteN (st.c_str (), st.length (), f);
 }
 
-int
+int 
 AnimationInterface::WriteN (const char* data, uint32_t count, FILE * f)
-{
+{ 
   if (!f)
-    return 0;
+    {
+      return 0;
+    }
   // Write count bytes to h from data
   uint32_t    nLeft   = count;
   const char* p       = data;
@@ -508,7 +512,7 @@ AnimationInterface::WriteN (const char* data, uint32_t count, FILE * f)
   while (nLeft)
     {
       int n = std::fwrite (p, 1,  nLeft, f);
-      if (n <= 0)
+      if (n <= 0) 
         {
           return written;
         }
@@ -519,7 +523,7 @@ AnimationInterface::WriteN (const char* data, uint32_t count, FILE * f)
   return written;
 }
 
-void
+void 
 AnimationInterface::WriteRoutePath (uint32_t nodeId, std::string destination, Ipv4RoutePathElements rpElements)
 {
   NS_LOG_INFO ("Writing Route Path From :" << nodeId << " To: " << destination.c_str ());
@@ -536,13 +540,13 @@ AnimationInterface::WriteRoutePath (uint32_t nodeId, std::string destination, Ip
   */
 }
 
-void
+void 
 AnimationInterface::WriteNonP2pLinkProperties (uint32_t id, std::string ipv4Address, std::string channelType)
 {
   WriteXmlNonP2pLinkProperties (id, ipv4Address, channelType);
 }
 
-const std::vector<std::string>
+const std::vector<std::string> 
 AnimationInterface::GetElementsFromContext (const std::string& context) const
 {
   std::vector <std::string> elements;
@@ -552,7 +556,7 @@ AnimationInterface::GetElementsFromContext (const std::string& context) const
     pos1 = context.find ("/",pos1);
     pos2 = context.find ("/",pos1+1);
     elements.push_back (context.substr (pos1+1,pos2-(pos1+1)));
-    pos1 = pos2;
+    pos1 = pos2; 
     pos2 = context.npos;
   }
   return elements;
@@ -584,7 +588,7 @@ AnimationInterface::GetNetDeviceFromContext (std::string context)
   return n->GetDevice (atoi (elements.at (3).c_str ()));
 }
 
-uint64_t
+uint64_t 
 AnimationInterface::GetAnimUidFromPacket (Ptr <const Packet> p)
 {
   AnimByteTag tag;
@@ -610,7 +614,7 @@ AnimationInterface::GetAnimUidFromPacket (Ptr <const Packet> p)
     }
 }
 
-void
+void 
 AnimationInterface::AddByteTag (uint64_t animUid, Ptr<const Packet> p)
 {
   AnimByteTag tag;
@@ -618,12 +622,10 @@ AnimationInterface::AddByteTag (uint64_t animUid, Ptr<const Packet> p)
   p->AddByteTag (tag);
 }
 
-void
+void 
 AnimationInterface::RemainingEnergyTrace (std::string context, double previousEnergy, double currentEnergy)
 {
-  if (!m_started || !IsInTimeWindow ())
-    return;
-
+  CHECK_STARTED_INTIMEWINDOW;
   const Ptr <const Node> node = GetNodeFromContext (context);
   const uint32_t nodeId = node->GetId ();
 
@@ -689,7 +691,7 @@ AnimationInterface::Ipv4TxTrace (std::string context, Ptr<const Packet> p, Ptr<I
   const Ptr <const Node> node = GetNodeFromContext (context);
   ++m_nodeIpv4Tx[node->GetId ()];
 }
-
+ 
 void
 AnimationInterface::Ipv4RxTrace (std::string context, Ptr<const Packet> p, Ptr<Ipv4> ipv4, uint32_t interfaceIndex)
 {
@@ -698,11 +700,11 @@ AnimationInterface::Ipv4RxTrace (std::string context, Ptr<const Packet> p, Ptr<I
 }
 
 void
-AnimationInterface::Ipv4DropTrace (std::string context,
-                                   const Ipv4Header & ipv4Header,
-                                   Ptr<const Packet> p,
-                                   Ipv4L3Protocol::DropReason dropReason,
-                                   Ptr<Ipv4> ipv4,
+AnimationInterface::Ipv4DropTrace (std::string context, 
+                                   const Ipv4Header & ipv4Header, 
+                                   Ptr<const Packet> p, 
+                                   Ipv4L3Protocol::DropReason dropReason, 
+                                   Ptr<Ipv4> ipv4, 
                                    uint32_t)
 {
   const Ptr <const Node> node = GetNodeFromContext (context);
@@ -733,17 +735,16 @@ AnimationInterface::QueueDropTrace (std::string context,
   ++m_nodeQueueDrop[node->GetId ()];
 }
 
-void
-AnimationInterface::DevTxTrace (std::string context,
-                                uint32_t,
-                                Ptr<const Packet> p,
-                                Ptr<NetDevice> tx,
-                                Ptr<NetDevice> rx,
-                                Time txTime,
-                                Time rxTime)
+void 
+AnimationInterface::DevTxTrace (std::string context, 
+                                     Ptr<const Packet> p,
+                                     Ptr<NetDevice> tx, 
+                                     Ptr<NetDevice> rx,
+                                     Time txTime, 
+                                     Time rxTime)
 {
-  if (!m_started || !IsInTimeWindow () || !m_trackPackets)
-    return;
+  NS_LOG_FUNCTION (this);
+  CHECK_STARTED_INTIMEWINDOW_TRACKPACKETS;
   NS_ASSERT (tx);
   NS_ASSERT (rx);
   Time now = Simulator::Now ();
@@ -752,90 +753,95 @@ AnimationInterface::DevTxTrace (std::string context,
   double fbRx = (now + rxTime - txTime).GetSeconds ();
   double lbRx = (now + rxTime).GetSeconds ();
   CheckMaxPktsPerTraceFile ();
-  WriteXmlP ("p",
-             tx->GetNode ()->GetId (),
-             fbTx,
-             lbTx,
-             rx->GetNode ()->GetId (),
-             fbRx,
-             lbRx,
+  WriteXmlP ("p", 
+             tx->GetNode ()->GetId (), 
+             fbTx, 
+             lbTx, 
+             rx->GetNode ()->GetId (), 
+             fbRx, 
+             lbRx, 
              m_enablePacketMetadata? GetPacketMetadata (p):"");
 }
 
 void
-AnimationInterface::UanPhyGenTxTrace (std::string context, Ptr<const Packet> p)
+AnimationInterface::GenericWirelessTxTrace (std::string context, Ptr<const Packet> p, ProtocolType protocolType)
 {
-  if (!m_started || !IsInTimeWindow () || !m_trackPackets)
-    return;
+  NS_LOG_FUNCTION (this);
+  CHECK_STARTED_INTIMEWINDOW_TRACKPACKETS;
   Ptr <NetDevice> ndev = GetNetDeviceFromContext (context);
   NS_ASSERT (ndev);
-  Ptr <Node> n = ndev->GetNode ();
-  NS_ASSERT (n);
+  UpdatePosition (ndev);
+
   ++gAnimUid;
-  NS_LOG_INFO ("Uan TxBeginTrace for packet:" << gAnimUid);
+  NS_LOG_INFO (ProtocolTypeToString (protocolType).c_str () << " GenericWirelessTxTrace for packet:" << gAnimUid);
   AddByteTag (gAnimUid, p);
-  AnimPacketInfo pktInfo (ndev, Simulator::Now (), Simulator::Now (), UpdatePosition (n));
-  AddPendingPacket (AnimationInterface::UAN, gAnimUid, pktInfo);
-  OutputWirelessPacketTxInfo (p, m_pendingUanPackets[gAnimUid], gAnimUid);
+  AnimPacketInfo pktInfo (ndev, Simulator::Now ());
+  AddPendingPacket (protocolType, gAnimUid, pktInfo);
+
+  Ptr<WifiNetDevice> netDevice = DynamicCast<WifiNetDevice> (ndev);
+  if (netDevice)
+    { 
+      Mac48Address nodeAddr = netDevice->GetMac ()->GetAddress ();
+      std::ostringstream oss; 
+      oss << nodeAddr;
+      Ptr <Node> n = netDevice->GetNode ();
+      NS_ASSERT (n);
+      m_macToNodeIdMap[oss.str ()] = n->GetId ();
+      NS_LOG_INFO ("Added Mac" << oss.str () << " node:" <<m_macToNodeIdMap[oss.str ()]);
+    }
+  AnimUidPacketInfoMap * pendingPackets =  ProtocolTypeToPendingPackets (protocolType); 
+  OutputWirelessPacketTxInfo (p, pendingPackets->at (gAnimUid), gAnimUid);
 }
 
 void
-AnimationInterface::UanPhyGenRxTrace (std::string context, Ptr<const Packet> p)
+AnimationInterface::GenericWirelessRxTrace (std::string context, Ptr<const Packet> p, ProtocolType protocolType)
 {
-  if (!m_started || !IsInTimeWindow () || !m_trackPackets)
-    return;
+  NS_LOG_FUNCTION (this);
+  CHECK_STARTED_INTIMEWINDOW_TRACKPACKETS;
   Ptr <NetDevice> ndev = GetNetDeviceFromContext (context);
   NS_ASSERT (ndev);
-  Ptr <Node> n = ndev->GetNode ();
-  NS_ASSERT (n);
+  UpdatePosition (ndev);
   uint64_t animUid = GetAnimUidFromPacket (p);
-  NS_LOG_INFO ("UanPhyGenRxTrace for packet:" << animUid);
-  if (!IsPacketPending (animUid, AnimationInterface::UAN))
+  NS_LOG_INFO (ProtocolTypeToString (protocolType).c_str () << " for packet:" << animUid);
+  if (!IsPacketPending (animUid, protocolType))
     {
-      NS_LOG_WARN ("UanPhyGenRxBeginTrace: unknown Uid");
+      NS_LOG_WARN (ProtocolTypeToString (protocolType).c_str () << " GenericWirelessRxTrace: unknown Uid");
       return;
     }
-  m_pendingUanPackets[animUid].ProcessRxBegin (ndev, Simulator::Now ());
-  m_pendingUanPackets[animUid].ProcessRxEnd (ndev, Simulator::Now (), UpdatePosition (n));
-  OutputWirelessPacketRxInfo (p, m_pendingUanPackets[animUid].GetRxInfo (ndev), animUid);
+  AnimUidPacketInfoMap * pendingPackets =  ProtocolTypeToPendingPackets (protocolType); 
+  pendingPackets->at (animUid).ProcessRxBegin (ndev, Simulator::Now ().GetSeconds ());
+  OutputWirelessPacketRxInfo (p, pendingPackets->at (animUid), animUid);
 }
 
-
-void
-AnimationInterface::WifiPhyTxBeginTrace (std::string context,
-                                          Ptr<const Packet> p)
+void 
+AnimationInterface::UanPhyGenTxTrace (std::string context, Ptr<const Packet> p)
 {
-  if (!m_started || !IsInTimeWindow () || !m_trackPackets)
-    return;
-  Ptr <NetDevice> ndev = GetNetDeviceFromContext (context);
-  NS_ASSERT (ndev);
-  Ptr <Node> n = ndev->GetNode ();
-  NS_ASSERT (n);
-  ++gAnimUid;
-  NS_LOG_INFO ("Wifi TxBeginTrace for packet:" << gAnimUid);
-  AddByteTag (gAnimUid, p);
-  AnimPacketInfo pktInfo (ndev, Simulator::Now (), Simulator::Now (), UpdatePosition (n));
-  AddPendingPacket (AnimationInterface::WIFI, gAnimUid, pktInfo);
-  Ptr<WifiNetDevice> netDevice = DynamicCast<WifiNetDevice> (ndev);
-  Mac48Address nodeAddr = netDevice->GetMac ()->GetAddress ();
-  std::ostringstream oss;
-  oss << nodeAddr;
-  m_macToNodeIdMap[oss.str ()] = n->GetId ();
-  NS_LOG_INFO ("Added Mac" << oss.str () << " node:" <<m_macToNodeIdMap[oss.str ()]);
-  OutputWirelessPacketTxInfo (p, m_pendingWifiPackets[gAnimUid], gAnimUid);
+  NS_LOG_FUNCTION (this);
+  return GenericWirelessTxTrace (context, p, AnimationInterface::UAN);
 }
 
-void
-AnimationInterface::WifiPhyRxBeginTrace (std::string context,
-                                              Ptr<const Packet> p)
+void 
+AnimationInterface::UanPhyGenRxTrace (std::string context, Ptr<const Packet> p)
 {
-  //NS_LOG_UNCOND ("Context:" << context.c_str ());
-  if (!m_started || !IsInTimeWindow () || !m_trackPackets)
-    return;
+  NS_LOG_FUNCTION (this);
+  return GenericWirelessRxTrace (context, p, AnimationInterface::UAN);
+}
+
+void 
+AnimationInterface::WifiPhyTxBeginTrace (std::string context, Ptr<const Packet> p)
+{
+  NS_LOG_FUNCTION (this);
+  return GenericWirelessTxTrace (context, p, AnimationInterface::WIFI);
+}
+
+void 
+AnimationInterface::WifiPhyRxBeginTrace (std::string context, Ptr<const Packet> p)
+{
+  NS_LOG_FUNCTION (this);
+  CHECK_STARTED_INTIMEWINDOW_TRACKPACKETS;
   Ptr <NetDevice> ndev = GetNetDeviceFromContext (context);
   NS_ASSERT (ndev);
-  Ptr <Node> n = ndev->GetNode ();
-  NS_ASSERT (n);
+  UpdatePosition (ndev);
   uint64_t animUid = GetAnimUidFromPacket (p);
   NS_LOG_INFO ("Wifi RxBeginTrace for packet:" << animUid);
   if (!IsPacketPending (animUid, AnimationInterface::WIFI))
@@ -845,115 +851,62 @@ AnimationInterface::WifiPhyRxBeginTrace (std::string context,
       std::ostringstream oss;
       WifiMacHeader hdr;
       if (!p->PeekHeader (hdr))
-      {
+      { 
         NS_LOG_WARN ("WifiMacHeader not present");
         return;
       }
       oss << hdr.GetAddr2 ();
-      if (m_macToNodeIdMap.find (oss.str ()) == m_macToNodeIdMap.end ())
+      if (m_macToNodeIdMap.find (oss.str ()) == m_macToNodeIdMap.end ()) 
       {
         NS_LOG_WARN ("Transmitter Mac address " << oss.str () << " never seen before. Skipping");
         return;
       }
       Ptr <Node> txNode = NodeList::GetNode (m_macToNodeIdMap[oss.str ()]);
-      AnimPacketInfo pktInfo (0, Simulator::Now (), Simulator::Now (), UpdatePosition (txNode), m_macToNodeIdMap[oss.str ()]);
+      UpdatePosition (txNode);
+      AnimPacketInfo pktInfo (0, Simulator::Now (), m_macToNodeIdMap[oss.str ()]);
       AddPendingPacket (AnimationInterface::WIFI, animUid, pktInfo);
       NS_LOG_WARN ("WifiPhyRxBegin: unknown Uid, but we are adding a wifi packet");
     }
   /// \todo NS_ASSERT (WifiPacketIsPending (animUid) == true);
-  m_pendingWifiPackets[animUid].ProcessRxBegin (ndev, Simulator::Now ());
-  m_pendingWifiPackets[animUid].ProcessRxEnd (ndev, Simulator::Now (), UpdatePosition (n));
-  OutputWirelessPacketRxInfo (p, m_pendingWifiPackets[animUid].GetRxInfo (ndev), animUid);
+  m_pendingWifiPackets[animUid].ProcessRxBegin (ndev, Simulator::Now ().GetSeconds ());
+  OutputWirelessPacketRxInfo (p, m_pendingWifiPackets[animUid], animUid);
 }
 
-void
+void 
 AnimationInterface::WimaxTxTrace (std::string context, Ptr<const Packet> p, const Mac48Address & m)
 {
-  if (!m_started || !IsInTimeWindow () || !m_trackPackets)
-    return;
-  Ptr <NetDevice> ndev = GetNetDeviceFromContext (context);
-  NS_ASSERT (ndev);
-  Ptr <Node> n = ndev->GetNode ();
-  NS_ASSERT (n);
-  ++gAnimUid;
-  NS_LOG_INFO ("WimaxTxTrace for packet:" << gAnimUid);
-  AnimPacketInfo pktInfo (ndev, Simulator::Now (), Simulator::Now () + Seconds (0.001), UpdatePosition (n));
-  /// \todo 0.0001 is used until Wimax implements TxBegin and TxEnd traces
-  AddByteTag (gAnimUid, p);
-  AddPendingPacket (AnimationInterface::WIMAX, gAnimUid, pktInfo);
-  OutputWirelessPacketTxInfo (p, pktInfo, gAnimUid);
+  NS_LOG_FUNCTION (this);
+  return GenericWirelessTxTrace (context, p, AnimationInterface::WIMAX);
 }
 
 
-void
+void 
 AnimationInterface::WimaxRxTrace (std::string context, Ptr<const Packet> p, const Mac48Address & m)
 {
-  if (!m_started || !IsInTimeWindow () || !m_trackPackets)
-    return;
-  Ptr <NetDevice> ndev = GetNetDeviceFromContext (context);
-  NS_ASSERT (ndev);
-  Ptr <Node> n = ndev->GetNode ();
-  NS_ASSERT (n);
-  uint64_t animUid = GetAnimUidFromPacket (p);
-  NS_LOG_INFO ("WimaxRxTrace for packet:" << animUid);
-  NS_ASSERT (IsPacketPending (animUid, AnimationInterface::WIMAX) == true);
-  AnimPacketInfo& pktInfo = m_pendingWimaxPackets[animUid];
-  pktInfo.ProcessRxBegin (ndev, Simulator::Now ());
-  pktInfo.ProcessRxEnd (ndev, Simulator::Now () + Seconds (0.001), UpdatePosition (n));
-  /// \todo 0.001 is used until Wimax implements RxBegin and RxEnd traces
-  AnimRxInfo pktrxInfo = pktInfo.GetRxInfo (ndev);
-  OutputWirelessPacketRxInfo (p, pktrxInfo, animUid);
+  NS_LOG_FUNCTION (this);
+  return GenericWirelessRxTrace (context, p, AnimationInterface::WIMAX);
 }
 
-void
+void 
 AnimationInterface::LteTxTrace (std::string context, Ptr<const Packet> p, const Mac48Address & m)
 {
-  if (!m_started || !IsInTimeWindow () || !m_trackPackets)
-    return;
-  Ptr <NetDevice> ndev = GetNetDeviceFromContext (context);
-  NS_ASSERT (ndev);
-  Ptr <Node> n = ndev->GetNode ();
-  NS_ASSERT (n);
-  ++gAnimUid;
-  NS_LOG_INFO ("LteTxTrace for packet:" << gAnimUid);
-  AnimPacketInfo pktInfo (ndev, Simulator::Now (), Simulator::Now () + Seconds (0.001), UpdatePosition (n));
-  /// \todo 0.0001 is used until Lte implements TxBegin and TxEnd traces
-  AddByteTag (gAnimUid, p);
-  AddPendingPacket (AnimationInterface::LTE, gAnimUid, pktInfo);
-  OutputWirelessPacketTxInfo (p, pktInfo, gAnimUid);
+  NS_LOG_FUNCTION (this);
+  return GenericWirelessTxTrace (context, p, AnimationInterface::LTE);
 }
 
-
-void
+void 
 AnimationInterface::LteRxTrace (std::string context, Ptr<const Packet> p, const Mac48Address & m)
 {
-  if (!m_started || !IsInTimeWindow () || !m_trackPackets)
-    return;
-  Ptr <NetDevice> ndev = GetNetDeviceFromContext (context);
-  NS_ASSERT (ndev);
-  Ptr <Node> n = ndev->GetNode ();
-  NS_ASSERT (n);
-  uint64_t animUid = GetAnimUidFromPacket (p);
-  NS_LOG_INFO ("LteRxTrace for packet:" << gAnimUid);
-  if (!IsPacketPending (animUid, AnimationInterface::LTE))
-    {
-      NS_LOG_WARN ("LteRxTrace: unknown Uid");
-      return;
-    }
-  AnimPacketInfo& pktInfo = m_pendingLtePackets[animUid];
-  pktInfo.ProcessRxBegin (ndev, Simulator::Now ());
-  pktInfo.ProcessRxEnd (ndev, Simulator::Now () + Seconds (0.001), UpdatePosition (n));
-  /// \todo 0.001 is used until Lte implements RxBegin and RxEnd traces
-  AnimRxInfo pktrxInfo = pktInfo.GetRxInfo (ndev);
-  OutputWirelessPacketRxInfo (p, pktrxInfo, animUid);
+  NS_LOG_FUNCTION (this);
+  return GenericWirelessRxTrace (context, p, AnimationInterface::LTE);
 }
 
-void
+void 
 AnimationInterface::LteSpectrumPhyTxStart (std::string context, Ptr<const PacketBurst> pb)
 {
-  if (!m_started || !IsInTimeWindow () || !m_trackPackets)
-    return;
-  if (!pb)
+  NS_LOG_FUNCTION (this);
+  CHECK_STARTED_INTIMEWINDOW_TRACKPACKETS;
+  if (!pb) 
     {
       NS_LOG_WARN ("pb == 0. Not yet supported");
       return;
@@ -961,8 +914,7 @@ AnimationInterface::LteSpectrumPhyTxStart (std::string context, Ptr<const Packet
   context = "/" + context;
   Ptr <NetDevice> ndev = GetNetDeviceFromContext (context);
   NS_ASSERT (ndev);
-  Ptr <Node> n = ndev->GetNode ();
-  NS_ASSERT (n);
+  UpdatePosition (ndev);
 
   std::list <Ptr <Packet> > pbList = pb->GetPackets ();
   for (std::list <Ptr <Packet> >::iterator i  = pbList.begin ();
@@ -972,20 +924,19 @@ AnimationInterface::LteSpectrumPhyTxStart (std::string context, Ptr<const Packet
       Ptr <Packet> p = *i;
       ++gAnimUid;
       NS_LOG_INFO ("LteSpectrumPhyTxTrace for packet:" << gAnimUid);
-      AnimPacketInfo pktInfo (ndev, Simulator::Now (), Simulator::Now () + Seconds (0.001), UpdatePosition (n));
-      /// \todo 0.0001 is used until Lte implements TxBegin and TxEnd traces
+      AnimPacketInfo pktInfo (ndev, Simulator::Now ());
       AddByteTag (gAnimUid, p);
       AddPendingPacket (AnimationInterface::LTE, gAnimUid, pktInfo);
       OutputWirelessPacketTxInfo (p, pktInfo, gAnimUid);
     }
 }
 
-void
+void 
 AnimationInterface::LteSpectrumPhyRxStart (std::string context, Ptr<const PacketBurst> pb)
 {
-  if (!m_started || !IsInTimeWindow () || !m_trackPackets)
-    return;
-  if (!pb)
+  NS_LOG_FUNCTION (this);
+  CHECK_STARTED_INTIMEWINDOW_TRACKPACKETS;
+  if (!pb) 
     {
       NS_LOG_WARN ("pb == 0. Not yet supported");
       return;
@@ -993,8 +944,7 @@ AnimationInterface::LteSpectrumPhyRxStart (std::string context, Ptr<const Packet
   context = "/" + context;
   Ptr <NetDevice> ndev = GetNetDeviceFromContext (context);
   NS_ASSERT (ndev);
-  Ptr <Node> n = ndev->GetNode ();
-  NS_ASSERT (n);
+  UpdatePosition (ndev);
 
   std::list <Ptr <Packet> > pbList = pb->GetPackets ();
   for (std::list <Ptr <Packet> >::iterator i  = pbList.begin ();
@@ -1010,47 +960,44 @@ AnimationInterface::LteSpectrumPhyRxStart (std::string context, Ptr<const Packet
           return;
         }
       AnimPacketInfo& pktInfo = m_pendingLtePackets[animUid];
-      pktInfo.ProcessRxBegin (ndev, Simulator::Now ());
-      pktInfo.ProcessRxEnd (ndev, Simulator::Now () + Seconds (0.001), UpdatePosition (n));
-      /// \todo 0.001 is used until Lte implements RxBegin and RxEnd traces
-      AnimRxInfo pktrxInfo = pktInfo.GetRxInfo (ndev);
-      OutputWirelessPacketRxInfo (p, pktrxInfo, animUid);
+      pktInfo.ProcessRxBegin (ndev, Simulator::Now ().GetSeconds ());
+      OutputWirelessPacketRxInfo (p, pktInfo, animUid);
     }
 }
 
-void
+void 
 AnimationInterface::CsmaPhyTxBeginTrace (std::string context, Ptr<const Packet> p)
 {
-  if (!m_started || !IsInTimeWindow () || !m_trackPackets)
-    return;
+  NS_LOG_FUNCTION (this);
+  CHECK_STARTED_INTIMEWINDOW_TRACKPACKETS;
   Ptr <NetDevice> ndev = GetNetDeviceFromContext (context);
   NS_ASSERT (ndev);
-  Ptr <Node> n = ndev->GetNode ();
-  NS_ASSERT (n);
+  UpdatePosition (ndev);
   ++gAnimUid;
   NS_LOG_INFO ("CsmaPhyTxBeginTrace for packet:" << gAnimUid);
   AddByteTag (gAnimUid, p);
-  AnimPacketInfo pktInfo (ndev, Simulator::Now (), Simulator::Now (), UpdatePosition (n));
+  UpdatePosition (ndev);
+  AnimPacketInfo pktInfo (ndev, Simulator::Now ());
   AddPendingPacket (AnimationInterface::CSMA, gAnimUid, pktInfo);
+
 
 }
 
-void
+void 
 AnimationInterface::CsmaPhyTxEndTrace (std::string context, Ptr<const Packet> p)
 {
-  if (!m_started || !IsInTimeWindow () || !m_trackPackets)
-    return;
+  NS_LOG_FUNCTION (this);
+  CHECK_STARTED_INTIMEWINDOW_TRACKPACKETS;
   Ptr <NetDevice> ndev = GetNetDeviceFromContext (context);
   NS_ASSERT (ndev);
-  Ptr <Node> n = ndev->GetNode ();
-  NS_ASSERT (n);
+  UpdatePosition (ndev);
   uint64_t animUid = GetAnimUidFromPacket (p);
   NS_LOG_INFO ("CsmaPhyTxEndTrace for packet:" << animUid);
   if (!IsPacketPending (animUid, AnimationInterface::CSMA))
     {
-      NS_LOG_WARN ("CsmaPhyTxEndTrace: unknown Uid");
-      NS_FATAL_ERROR ("CsmaPhyTxEndTrace: unknown Uid");
-      AnimPacketInfo pktInfo (ndev, Simulator::Now (), Simulator::Now (), UpdatePosition (n));
+      NS_LOG_WARN ("CsmaPhyTxEndTrace: unknown Uid"); 
+      NS_FATAL_ERROR ("CsmaPhyTxEndTrace: unknown Uid"); 
+      AnimPacketInfo pktInfo (ndev, Simulator::Now ());
       AddPendingPacket (AnimationInterface::CSMA, animUid, pktInfo);
       NS_LOG_WARN ("Unknown Uid, but adding Csma Packet anyway");
     }
@@ -1059,59 +1006,46 @@ AnimationInterface::CsmaPhyTxEndTrace (std::string context, Ptr<const Packet> p)
   pktInfo.m_lbTx = Simulator::Now ().GetSeconds ();
 }
 
-void
+void 
 AnimationInterface::CsmaPhyRxEndTrace (std::string context, Ptr<const Packet> p)
 {
-  if (!m_started || !IsInTimeWindow () || !m_trackPackets)
-    return;
+  NS_LOG_FUNCTION (this);
+  CHECK_STARTED_INTIMEWINDOW_TRACKPACKETS;
   Ptr <NetDevice> ndev = GetNetDeviceFromContext (context);
   NS_ASSERT (ndev);
-  Ptr <Node> n = ndev->GetNode ();
-  NS_ASSERT (n);
+  UpdatePosition (ndev);
   uint64_t animUid = GetAnimUidFromPacket (p);
   if (!IsPacketPending (animUid, AnimationInterface::CSMA))
     {
-      NS_LOG_WARN ("CsmaPhyRxEndTrace: unknown Uid");
+      NS_LOG_WARN ("CsmaPhyRxEndTrace: unknown Uid"); 
       return;
     }
   /// \todo NS_ASSERT (CsmaPacketIsPending (AnimUid) == true);
   AnimPacketInfo& pktInfo = m_pendingCsmaPackets[animUid];
-  pktInfo.ProcessRxBegin (ndev, Simulator::Now ());
-  pktInfo.ProcessRxEnd (ndev, Simulator::Now (), UpdatePosition (n));
+  pktInfo.ProcessRxBegin (ndev, Simulator::Now ().GetSeconds ());
   NS_LOG_INFO ("CsmaPhyRxEndTrace for packet:" << animUid);
-  AnimRxInfo pktrxInfo = pktInfo.GetRxInfo (ndev);
-  if (pktrxInfo.IsPhyRxComplete ())
-    {
-      NS_LOG_INFO ("CsmaPhyRxEndTrace for packet:" << animUid << " complete");
-      OutputCsmaPacket (p, pktInfo, pktrxInfo);
-    }
+  NS_LOG_INFO ("CsmaPhyRxEndTrace for packet:" << animUid << " complete");
+  OutputCsmaPacket (p, pktInfo);
 }
 
-void
+void 
 AnimationInterface::CsmaMacRxTrace (std::string context,
                                          Ptr<const Packet> p)
 {
-  if (!m_started || !IsInTimeWindow () || !m_trackPackets)
-    return;
   NS_LOG_FUNCTION (this);
+  CHECK_STARTED_INTIMEWINDOW_TRACKPACKETS;
   Ptr <NetDevice> ndev = GetNetDeviceFromContext (context);
   NS_ASSERT (ndev);
-  Ptr <Node> n = ndev->GetNode ();
-  NS_ASSERT (n);
   uint64_t animUid = GetAnimUidFromPacket (p);
   if (!IsPacketPending (animUid, AnimationInterface::CSMA))
     {
-      NS_LOG_WARN ("CsmaMacRxTrace: unknown Uid");
+      NS_LOG_WARN ("CsmaMacRxTrace: unknown Uid"); 
       return;
     }
   /// \todo NS_ASSERT (CsmaPacketIsPending (AnimUid) == true);
   AnimPacketInfo& pktInfo = m_pendingCsmaPackets[animUid];
-  AnimRxInfo pktrxInfo = pktInfo.GetRxInfo (ndev);
-  if (pktrxInfo.IsPhyRxComplete ())
-    {
-      NS_LOG_INFO ("MacRxTrace for packet:" << animUid << " complete");
-      OutputCsmaPacket (p, pktInfo, pktrxInfo);
-    }
+  NS_LOG_INFO ("MacRxTrace for packet:" << animUid << " complete");
+  OutputCsmaPacket (p, pktInfo);
 }
 
 void
@@ -1120,41 +1054,43 @@ AnimationInterface::OutputWirelessPacketTxInfo (Ptr<const Packet> p, AnimPacketI
   CheckMaxPktsPerTraceFile ();
   uint32_t nodeId = 0;
   if (pktInfo.m_txnd)
-    nodeId = pktInfo.m_txnd->GetNode ()->GetId ();
+    {
+      nodeId = pktInfo.m_txnd->GetNode ()->GetId ();
+    }
   else
-    nodeId = pktInfo.m_txNodeId;
-  double lbTx = pktInfo.m_firstLastBitDelta + pktInfo.m_fbTx;
-  WriteXmlPRef (animUid, nodeId, pktInfo.m_fbTx, lbTx, m_enablePacketMetadata? GetPacketMetadata (p):"");
-
+    {
+      nodeId = pktInfo.m_txNodeId;
+    }
+  WriteXmlPRef (animUid, nodeId, pktInfo.m_fbTx, m_enablePacketMetadata? GetPacketMetadata (p):"");
 }
 
-void
-AnimationInterface::OutputWirelessPacketRxInfo (Ptr<const Packet> p, AnimRxInfo pktrxInfo, uint64_t animUid)
+void 
+AnimationInterface::OutputWirelessPacketRxInfo (Ptr<const Packet> p, AnimPacketInfo & pktInfo, uint64_t animUid)
 {
   CheckMaxPktsPerTraceFile ();
-  uint32_t rxId = pktrxInfo.m_rxnd->GetNode ()->GetId ();
-  WriteXmlP (animUid, "wpr", rxId, pktrxInfo.m_fbRx, pktrxInfo.m_lbRx);
+  uint32_t rxId = pktInfo.m_rxnd->GetNode ()->GetId ();
+  WriteXmlP (animUid, "wpr", rxId, pktInfo.m_fbRx, pktInfo.m_lbRx);
 }
 
-void
-AnimationInterface::OutputCsmaPacket (Ptr<const Packet> p, AnimPacketInfo &pktInfo, AnimRxInfo pktrxInfo)
+void 
+AnimationInterface::OutputCsmaPacket (Ptr<const Packet> p, AnimPacketInfo &pktInfo)
 {
   CheckMaxPktsPerTraceFile ();
   NS_ASSERT (pktInfo.m_txnd);
   uint32_t nodeId = pktInfo.m_txnd->GetNode ()->GetId ();
-  uint32_t rxId = pktrxInfo.m_rxnd->GetNode ()->GetId ();
+  uint32_t rxId = pktInfo.m_rxnd->GetNode ()->GetId ();
 
-  WriteXmlP ("p",
-             nodeId,
-             pktInfo.m_fbTx,
-             pktInfo.m_lbTx,
+  WriteXmlP ("p", 
+             nodeId, 
+             pktInfo.m_fbTx, 
+             pktInfo.m_lbTx, 
              rxId,
-             pktrxInfo.m_fbRx,
-             pktrxInfo.m_lbRx,
+             pktInfo.m_fbRx, 
+             pktInfo.m_lbRx, 
              m_enablePacketMetadata? GetPacketMetadata (p):"");
 }
 
-void
+void 
 AnimationInterface::AddPendingPacket (ProtocolType protocolType, uint64_t animUid, AnimPacketInfo pktInfo)
 {
   AnimUidPacketInfoMap * pendingPackets = ProtocolTypeToPendingPackets (protocolType);
@@ -1162,7 +1098,7 @@ AnimationInterface::AddPendingPacket (ProtocolType protocolType, uint64_t animUi
   pendingPackets->insert (AnimUidPacketInfoMap::value_type (animUid, pktInfo));
 }
 
-bool
+bool 
 AnimationInterface::IsPacketPending (uint64_t animUid, AnimationInterface::ProtocolType protocolType)
 {
   AnimUidPacketInfoMap * pendingPackets = ProtocolTypeToPendingPackets (protocolType);
@@ -1170,20 +1106,22 @@ AnimationInterface::IsPacketPending (uint64_t animUid, AnimationInterface::Proto
   return (pendingPackets->find (animUid) != pendingPackets->end ());
 }
 
-void
+void 
 AnimationInterface::PurgePendingPackets (AnimationInterface::ProtocolType protocolType)
 {
   AnimUidPacketInfoMap * pendingPackets = ProtocolTypeToPendingPackets (protocolType);
   NS_ASSERT (pendingPackets);
   if (pendingPackets->empty ())
-    return;
+    {
+      return;
+    }
   std::vector <uint64_t> purgeList;
   for (AnimUidPacketInfoMap::iterator i = pendingPackets->begin ();
        i != pendingPackets->end ();
        ++i)
     {
-
-      AnimPacketInfo pktInfo = i->second;
+     
+      AnimPacketInfo pktInfo = i->second; 
       double delta = (Simulator::Now ().GetSeconds () - pktInfo.m_fbTx);
       if (delta > PURGE_INTERVAL)
         {
@@ -1198,7 +1136,7 @@ AnimationInterface::PurgePendingPackets (AnimationInterface::ProtocolType protoc
     }
 }
 
-AnimationInterface::AnimUidPacketInfoMap *
+AnimationInterface::AnimUidPacketInfoMap * 
 AnimationInterface::ProtocolTypeToPendingPackets (AnimationInterface::ProtocolType protocolType)
 {
   AnimUidPacketInfoMap * pendingPackets = 0;
@@ -1234,9 +1172,44 @@ AnimationInterface::ProtocolTypeToPendingPackets (AnimationInterface::ProtocolTy
 
 }
 
+std::string
+AnimationInterface::ProtocolTypeToString (AnimationInterface::ProtocolType protocolType)
+{
+  std::string result = "Unknown";
+  switch (protocolType)
+    {
+      case AnimationInterface::WIFI:
+        {
+          result = "WIFI";
+          break;
+        }
+      case AnimationInterface::UAN:
+        {
+          result = "UAN";
+          break;
+        }
+      case AnimationInterface::CSMA:
+        {
+          result = "CSMA";
+          break;
+        }
+      case AnimationInterface::WIMAX:
+        {
+          result = "WIMAX";
+          break;
+        }
+      case AnimationInterface::LTE:
+        {
+          result = "LTE";
+          break;
+        }
+    }
+  return result;
+}
+
 // Counters
 
-std::string
+std::string 
 AnimationInterface::CounterTypeToString (CounterType counterType)
 {
   std::string typeString = "unknown";
@@ -1246,19 +1219,19 @@ AnimationInterface::CounterTypeToString (CounterType counterType)
         {
           typeString = "UINT32";
           break;
-        }
+        } 
       case DOUBLE_COUNTER:
         {
           typeString = "DOUBLE";
           break;
-        }
+        } 
     }
   return typeString;
 }
 
 // General
 
-std::string
+std::string 
 AnimationInterface::GetPacketMetadata (Ptr<const Packet> p)
 {
   std::ostringstream oss;
@@ -1266,19 +1239,19 @@ AnimationInterface::GetPacketMetadata (Ptr<const Packet> p)
   return oss.str ();
 }
 
-uint64_t
+uint64_t 
 AnimationInterface::GetTracePktCount ()
 {
   return m_currentPktCount;
 }
 
-void
+void 
 AnimationInterface::StopAnimation (bool onlyAnimation)
 {
   m_started = false;
   NS_LOG_INFO ("Stopping Animation");
   ResetAnimWriteCallback ();
-  if (m_f)
+  if (m_f) 
     {
       // Terminate the anim element
       WriteXmlClose ("anim");
@@ -1297,7 +1270,7 @@ AnimationInterface::StopAnimation (bool onlyAnimation)
     }
 }
 
-void
+void 
 AnimationInterface::StartAnimation (bool restart)
 {
   m_currentPktCount = 0;
@@ -1316,7 +1289,7 @@ AnimationInterface::StartAnimation (bool restart)
     }
 }
 
-void
+void 
 AnimationInterface::AddToIpv4AddressNodeIdTable (std::string ipv4Address, uint32_t nodeId)
 {
   m_ipv4ToNodeIdMap[ipv4Address] = nodeId;
@@ -1324,7 +1297,7 @@ AnimationInterface::AddToIpv4AddressNodeIdTable (std::string ipv4Address, uint32
 
 
 // Callbacks
-void
+void 
 AnimationInterface::ConnectLteEnb (Ptr <Node> n, Ptr <LteEnbNetDevice> nd, uint32_t devIndex)
 {
 
@@ -1348,7 +1321,7 @@ AnimationInterface::ConnectLteEnb (Ptr <Node> n, Ptr <LteEnbNetDevice> nd, uint3
 
 
 
-void
+void 
 AnimationInterface::ConnectLteUe (Ptr <Node> n, Ptr <LteUeNetDevice> nd, uint32_t devIndex)
 {
 
@@ -1370,7 +1343,7 @@ AnimationInterface::ConnectLteUe (Ptr <Node> n, Ptr <LteUeNetDevice> nd, uint32_
     }
 }
 
-void
+void 
 AnimationInterface::ConnectLte ()
 {
 
@@ -1398,7 +1371,7 @@ AnimationInterface::ConnectLte ()
     }
 }
 
-void
+void 
 AnimationInterface::ConnectCallbacks ()
 {
   // Connect the callbacks
@@ -1460,7 +1433,7 @@ AnimationInterface::ConnectCallbacks ()
   Config::Connect ("/NodeList/*/DeviceList/*/$ns3::PointToPointNetDevice/TxQueue/Dequeue",
                    MakeCallback (&AnimationInterface::DequeueTrace, this));
 
-  // Queue Drops
+  // Queue Drops 
 
   Config::Connect ("/NodeList/*/DeviceList/*/$ns3::AlohaNoackNetDevice/Queue/Drop",
                    MakeCallback (&AnimationInterface::QueueDropTrace, this));
@@ -1487,7 +1460,7 @@ AnimationInterface::ConnectCallbacks ()
                    MakeCallback (&AnimationInterface::WifiPhyRxDropTrace, this));
 }
 
-Vector
+Vector 
 AnimationInterface::UpdatePosition (Ptr <Node> n)
 {
   Ptr<MobilityModel> loc = n->GetObject<MobilityModel> ();
@@ -1503,7 +1476,7 @@ AnimationInterface::UpdatePosition (Ptr <Node> n)
   return m_nodeLocation[n->GetId ()];
 }
 
-Vector
+Vector 
 AnimationInterface::UpdatePosition (Ptr <Node> n, Vector v)
 {
   m_nodeLocation[n->GetId ()] = v;
@@ -1511,17 +1484,25 @@ AnimationInterface::UpdatePosition (Ptr <Node> n, Vector v)
 }
 
 Vector
+AnimationInterface::UpdatePosition (Ptr <NetDevice> ndev)
+{
+  Ptr <Node> n = ndev->GetNode ();
+  NS_ASSERT (n);
+  return UpdatePosition (n);
+}
+
+Vector 
 AnimationInterface::GetPosition (Ptr <Node> n)
 {
   if (m_nodeLocation.find (n->GetId ()) == m_nodeLocation.end ())
     {
       NS_FATAL_ERROR ("Node:" <<n->GetId () << " not found in Location table");
-    }
+    }  
   return m_nodeLocation[n->GetId ()];
 }
 
 
-std::string
+std::string 
 AnimationInterface::GetMacAddress (Ptr <NetDevice> nd)
 {
   Address nodeAddr = nd->GetAddress ();
@@ -1530,7 +1511,7 @@ AnimationInterface::GetMacAddress (Ptr <NetDevice> nd)
   return oss.str ().substr (6); // Skip the first 6 chars to get the Mac
 }
 
-std::string
+std::string 
 AnimationInterface::GetIpv4Address (Ptr <NetDevice> nd)
 {
   Ptr<Ipv4> ipv4 = NodeList::GetNode (nd->GetNode ()->GetId ())->GetObject <Ipv4> ();
@@ -1551,7 +1532,7 @@ AnimationInterface::GetIpv4Address (Ptr <NetDevice> nd)
   return oss.str ();
 }
 
-void
+void 
 AnimationInterface::WriteLinkProperties ()
 {
   for (NodeList::Iterator i = NodeList::Begin (); i != NodeList::End (); ++i)
@@ -1565,11 +1546,11 @@ AnimationInterface::WriteLinkProperties ()
           Ptr<NetDevice> dev = n->GetDevice (i);
  	  NS_ASSERT (dev);
           Ptr<Channel>   ch = dev->GetChannel ();
-          if (!ch)
+          if (!ch) 
             {
 	      NS_LOG_DEBUG ("No channel can't be a p2p device");
               // Try to see if it is an LTE NetDevice, which does not return a channel
-              if ((dev->GetInstanceTypeId ().GetName () == "ns3::LteUeNetDevice") ||
+              if ((dev->GetInstanceTypeId ().GetName () == "ns3::LteUeNetDevice") || 
                   (dev->GetInstanceTypeId ().GetName () == "ns3::LteEnbNetDevice")||
                   (dev->GetInstanceTypeId ().GetName () == "ns3::VirtualNetDevice"))
                 {
@@ -1589,11 +1570,16 @@ AnimationInterface::WriteLinkProperties ()
                   Ptr<NetDevice> chDev = ch->GetDevice (j);
                   uint32_t n2Id = chDev->GetNode ()->GetId ();
                   if (n1Id < n2Id)
-                    {
+                    { 
                       // ouptut the p2p link
-                      NS_LOG_INFO ("Link:" << GetIpv4Address (dev) << ":" << GetMacAddress (dev) << "----" << GetIpv4Address (chDev) << ":" << GetMacAddress (chDev) );
+                      NS_LOG_INFO ("Link:" << GetIpv4Address (dev) << ":" << GetMacAddress (dev) << "----" << GetIpv4Address (chDev) << ":" << GetMacAddress (chDev));
                       AddToIpv4AddressNodeIdTable (GetIpv4Address (dev), n1Id);
                       AddToIpv4AddressNodeIdTable (GetIpv4Address (chDev), n2Id);
+                      P2pLinkNodeIdPair p2pPair;
+                      p2pPair.fromNode = n1Id;
+                      p2pPair.toNode = n2Id;
+                      LinkProperties lp = {GetIpv4Address (dev) + "~" + GetMacAddress (dev), GetIpv4Address (chDev) + "~" + GetMacAddress (chDev), ""};
+                      m_linkProperties[p2pPair] = lp;
                       WriteXmlLink (n1Id, 0, n2Id);
                     }
                 }
@@ -1601,7 +1587,7 @@ AnimationInterface::WriteLinkProperties ()
           else
             {
               NS_LOG_INFO ("Link:" << GetIpv4Address (dev) << " Channel Type:" << channelType << " Mac: " << GetMacAddress (dev));
-              WriteNonP2pLinkProperties (n->GetId (), GetIpv4Address (dev) + "~" + GetMacAddress (dev), channelType);
+              WriteNonP2pLinkProperties (n->GetId (), GetIpv4Address (dev) + "~" + GetMacAddress (dev), channelType); 
               AddToIpv4AddressNodeIdTable (GetIpv4Address (dev), n->GetId ());
             }
         }
@@ -1621,7 +1607,7 @@ AnimationInterface::WriteNodes ()
     }
 }
 
-void
+void 
 AnimationInterface::WriteNodeColors ()
 {
   for (NodeList::Iterator i = NodeList::Begin (); i != NodeList::End (); ++i)
@@ -1636,7 +1622,7 @@ AnimationInterface::WriteNodeColors ()
     }
 }
 
-void
+void 
 AnimationInterface::WriteNodeSizes ()
 {
   for (NodeList::Iterator i = NodeList::Begin (); i != NodeList::End (); ++i)
@@ -1649,7 +1635,7 @@ AnimationInterface::WriteNodeSizes ()
     }
 }
 
-void
+void 
 AnimationInterface::WriteNodeEnergies ()
 {
   m_remainingEnergyCounterId = AddNodeCounter ("RemainingEnergy", AnimationInterface::DOUBLE_COUNTER);
@@ -1663,17 +1649,17 @@ AnimationInterface::WriteNodeEnergies ()
     }
 }
 
-bool
+bool 
 AnimationInterface::IsInTimeWindow ()
 {
-  if ((Simulator::Now () >= m_startTime) &&
+  if ((Simulator::Now () >= m_startTime) && 
       (Simulator::Now () <= m_stopTime))
     return true;
   else
     return false;
 }
 
-void
+void 
 AnimationInterface::SetOutputFile (const std::string& fn, bool routing)
 {
   if (!routing && m_f)
@@ -1707,7 +1693,7 @@ AnimationInterface::SetOutputFile (const std::string& fn, bool routing)
   return;
 }
 
-void
+void 
 AnimationInterface::CheckMaxPktsPerTraceFile ()
 {
   // Start a new trace file if the current packet count exceeded nax packets per file
@@ -1720,88 +1706,12 @@ AnimationInterface::CheckMaxPktsPerTraceFile ()
   StopAnimation (true);
 }
 
-std::string
+std::string 
 AnimationInterface::GetNetAnimVersion ()
 {
-  return NETANIM_VERSION;
+  return NETANIM_VERSION; 
 }
 
-
-// Routing
-
-void
-AnimationInterface::TrackIpv4RoutePaths ()
-{
-  if (m_ipv4RouteTrackElements.empty ())
-    {
-      return;
-    }
-  for (std::vector <Ipv4RouteTrackElement>::const_iterator i = m_ipv4RouteTrackElements.begin ();
-       i != m_ipv4RouteTrackElements.end ();
-       ++i)
-    {
-      Ipv4RouteTrackElement trackElement = *i;
-      Ptr <Node> fromNode = NodeList::GetNode (trackElement.fromNodeId);
-      if (!fromNode)
-        {
-          NS_FATAL_ERROR ("Node: " << trackElement.fromNodeId << " Not found");
-          continue;
-        }
-      Ptr <ns3::Ipv4> ipv4 = fromNode->GetObject <ns3::Ipv4> ();
-      if (!ipv4)
-        {
-          NS_LOG_WARN ("ipv4 object not found");
-          continue;
-        }
-      Ptr <Ipv4RoutingProtocol> rp = ipv4->GetRoutingProtocol ();
-      if (!rp)
-        {
-          NS_LOG_WARN ("Routing protocol object not found");
-          continue;
-        }
-      NS_LOG_INFO ("Begin Track Route for: " << trackElement.destination.c_str () << " From:" << trackElement.fromNodeId);
-      Ptr<Packet> pkt = Create<Packet> ();
-      Ipv4Header header;
-      header.SetDestination (Ipv4Address (trackElement.destination.c_str ()));
-      Socket::SocketErrno sockerr;
-      Ptr <Ipv4Route> rt = rp->RouteOutput (pkt, header, 0, sockerr);
-      Ipv4RoutePathElements rpElements;
-      if (!rt)
-        {
-          NS_LOG_INFO ("No route to :" << trackElement.destination.c_str ());
-          Ipv4RoutePathElement elem = { trackElement.fromNodeId, "-1" };
-          rpElements.push_back (elem);
-          WriteRoutePath (trackElement.fromNodeId, trackElement.destination, rpElements);
-          continue;
-        }
-      std::ostringstream oss;
-      oss << rt->GetGateway ();
-      NS_LOG_INFO ("Node:" << trackElement.fromNodeId << "-->" << rt->GetGateway ());
-      if (rt->GetGateway () == "0.0.0.0")
-        {
-          Ipv4RoutePathElement elem = { trackElement.fromNodeId, "C" };
-          rpElements.push_back (elem);
-          if ( m_ipv4ToNodeIdMap.find (trackElement.destination) != m_ipv4ToNodeIdMap.end ())
-            {
-              Ipv4RoutePathElement elem2 = { m_ipv4ToNodeIdMap[trackElement.destination], "L" };
-              rpElements.push_back (elem2);
-            }
-        }
-      else if (rt->GetGateway () == "127.0.0.1")
-        {
-          Ipv4RoutePathElement elem = { trackElement.fromNodeId, "-1" };
-          rpElements.push_back (elem);
-        }
-      else
-        {
-          Ipv4RoutePathElement elem = { trackElement.fromNodeId, oss.str () };
-          rpElements.push_back (elem);
-        }
-      RecursiveIpv4RoutePathSearch (oss.str (), trackElement.destination, rpElements);
-      WriteRoutePath (trackElement.fromNodeId, trackElement.destination, rpElements);
-    }
-
-}
 
 void
 AnimationInterface::TrackQueueCounters ()
@@ -1875,7 +1785,87 @@ AnimationInterface::TrackIpv4L3ProtocolCounters ()
   Simulator::Schedule (m_ipv4L3ProtocolCountersPollInterval, &AnimationInterface::TrackIpv4L3ProtocolCounters, this);
 }
 
-void
+
+
+
+
+/***** Routing-related *****/
+
+void 
+AnimationInterface::TrackIpv4RoutePaths ()
+{
+  if (m_ipv4RouteTrackElements.empty ())
+    {
+      return;
+    }
+  for (std::vector <Ipv4RouteTrackElement>::const_iterator i = m_ipv4RouteTrackElements.begin ();
+       i != m_ipv4RouteTrackElements.end ();
+       ++i)
+    {
+      Ipv4RouteTrackElement trackElement = *i;
+      Ptr <Node> fromNode = NodeList::GetNode (trackElement.fromNodeId);
+      if (!fromNode)
+        {
+          NS_FATAL_ERROR ("Node: " << trackElement.fromNodeId << " Not found");
+          continue;
+        }
+      Ptr <ns3::Ipv4> ipv4 = fromNode->GetObject <ns3::Ipv4> ();
+      if (!ipv4)
+        {
+          NS_LOG_WARN ("ipv4 object not found");
+          continue;
+        }
+      Ptr <Ipv4RoutingProtocol> rp = ipv4->GetRoutingProtocol ();
+      if (!rp)
+        {
+          NS_LOG_WARN ("Routing protocol object not found");
+          continue;
+        }
+      NS_LOG_INFO ("Begin Track Route for: " << trackElement.destination.c_str () << " From:" << trackElement.fromNodeId);
+      Ptr<Packet> pkt = Create<Packet> ();
+      Ipv4Header header;
+      header.SetDestination (Ipv4Address (trackElement.destination.c_str ()));
+      Socket::SocketErrno sockerr;
+      Ptr <Ipv4Route> rt = rp->RouteOutput (pkt, header, 0, sockerr);
+      Ipv4RoutePathElements rpElements;
+      if (!rt)
+        {
+          NS_LOG_INFO ("No route to :" << trackElement.destination.c_str ());
+          Ipv4RoutePathElement elem = { trackElement.fromNodeId, "-1" };
+          rpElements.push_back (elem);
+          WriteRoutePath (trackElement.fromNodeId, trackElement.destination, rpElements);
+          continue;
+        }
+      std::ostringstream oss;
+      oss << rt->GetGateway ();
+      NS_LOG_INFO ("Node:" << trackElement.fromNodeId << "-->" << rt->GetGateway ()); 
+      if (rt->GetGateway () == "0.0.0.0")
+        {
+          Ipv4RoutePathElement elem = { trackElement.fromNodeId, "C" };
+          rpElements.push_back (elem);
+          if ( m_ipv4ToNodeIdMap.find (trackElement.destination) != m_ipv4ToNodeIdMap.end ())
+            {
+              Ipv4RoutePathElement elem2 = { m_ipv4ToNodeIdMap[trackElement.destination], "L" };
+              rpElements.push_back (elem2);
+            }
+        }
+      else if (rt->GetGateway () == "127.0.0.1")
+        {
+          Ipv4RoutePathElement elem = { trackElement.fromNodeId, "-1" };
+          rpElements.push_back (elem);
+        }
+      else
+        {
+          Ipv4RoutePathElement elem = { trackElement.fromNodeId, oss.str () };
+          rpElements.push_back (elem);
+        }
+      RecursiveIpv4RoutePathSearch (oss.str (), trackElement.destination, rpElements);
+      WriteRoutePath (trackElement.fromNodeId, trackElement.destination, rpElements);
+    }
+
+}
+
+void 
 AnimationInterface::TrackIpv4Route ()
 {
   if (Simulator::Now () > m_routingStopTime)
@@ -1903,7 +1893,7 @@ AnimationInterface::TrackIpv4Route ()
   Simulator::Schedule (m_routingPollInterval, &AnimationInterface::TrackIpv4Route, this);
 }
 
-std::string
+std::string 
 AnimationInterface::GetIpv4RoutingTable (Ptr <Node> n)
 {
 
@@ -1921,7 +1911,7 @@ AnimationInterface::GetIpv4RoutingTable (Ptr <Node> n)
 
 }
 
-void
+void 
 AnimationInterface::RecursiveIpv4RoutePathSearch (std::string from, std::string to, Ipv4RoutePathElements & rpElements)
 {
   NS_LOG_INFO ("RecursiveIpv4RoutePathSearch from:" << from.c_str () << " to:" << to.c_str ());
@@ -1984,7 +1974,7 @@ AnimationInterface::RecursiveIpv4RoutePathSearch (std::string from, std::string 
         }
       return;
     }
-  NS_LOG_INFO ("Node:" << fromNode->GetId () << "-->" << rt->GetGateway ());
+  NS_LOG_INFO ("Node:" << fromNode->GetId () << "-->" << rt->GetGateway ()); 
   Ipv4RoutePathElement elem = { fromNode->GetId (), oss.str () };
   rpElements.push_back (elem);
   RecursiveIpv4RoutePathSearch (oss.str (), to, rpElements);
@@ -1992,29 +1982,378 @@ AnimationInterface::RecursiveIpv4RoutePathSearch (std::string from, std::string 
 }
 
 
-// XML
 
-AnimationInterface::AnimXmlElement::AnimXmlElement (std::string tagName):
-                                m_tagName (tagName)
+/***** WriteXml *****/
+
+void 
+AnimationInterface::WriteXmlAnim (bool routing)
+{
+  AnimXmlElement element ("anim");
+  element.AddAttribute ("ver", GetNetAnimVersion ());
+  FILE * f = m_f;
+  if (!routing)
+    {
+      element.AddAttribute ("filetype", "animation");
+    }
+  else
+    {
+      element.AddAttribute ("filetype", "routing");
+      f = m_routingF;
+    }
+  element.Close ();
+  WriteN (element.GetElementString (), f);
+}
+
+void 
+AnimationInterface::WriteXmlClose (std::string name, bool routing) 
+{
+  std::string closeString = "</" + name + ">\n"; 
+  if (!routing)
+    {
+      WriteN (closeString, m_f);
+    }
+  else
+    {
+      WriteN (closeString, m_routingF);
+    }
+}
+
+void 
+AnimationInterface::WriteXmlNode (uint32_t id, uint32_t sysId, double locX, double locY)
+{
+  AnimXmlElement element ("node");
+  element.AddAttribute ("id", id);
+  element.AddAttribute ("sysId", sysId);
+  element.AddAttribute ("locX", locX);
+  element.AddAttribute ("locY", locY);
+  element.CloseElement ();
+  WriteN (element.GetElementString (), m_f);
+}
+
+void 
+AnimationInterface::WriteXmlUpdateLink (uint32_t fromId, uint32_t toId, std::string linkDescription)
+{
+  AnimXmlElement element ("linkupdate");
+  element.AddAttribute ("t", Simulator::Now ().GetSeconds ());
+  element.AddAttribute ("fromId", fromId);
+  element.AddAttribute ("toId", toId);
+  element.AddAttribute ("ld", linkDescription, true);
+  element.CloseElement ();
+  WriteN (element.GetElementString (), m_f);
+}
+
+void 
+AnimationInterface::WriteXmlLink (uint32_t fromId, uint32_t toLp, uint32_t toId)
+{
+  AnimXmlElement element ("link");
+  element.AddAttribute ("fromId", fromId);
+  element.AddAttribute ("toId", toId);
+
+  LinkProperties lprop ;
+  lprop.fromNodeDescription = "";
+  lprop.toNodeDescription = "";
+  lprop.linkDescription = "";
+
+  P2pLinkNodeIdPair p1 = { fromId, toId };
+  P2pLinkNodeIdPair p2 = { toId, fromId };
+  if (m_linkProperties.find (p1) != m_linkProperties.end ())
+    {
+      lprop = m_linkProperties[p1];
+    }
+  else if (m_linkProperties.find (p2) != m_linkProperties.end ())
+    {
+      lprop = m_linkProperties[p2];
+    }
+  
+  element.AddAttribute ("fd", lprop.fromNodeDescription, true); 
+  element.AddAttribute ("td", lprop.toNodeDescription, true); 
+  element.AddAttribute ("ld", lprop.linkDescription, true); 
+  element.CloseElement ();
+  WriteN (element.GetElementString (), m_f);
+}
+
+void 
+AnimationInterface::WriteXmlRouting (uint32_t nodeId, std::string routingInfo)
+{
+  AnimXmlElement element ("rt");
+  element.AddAttribute ("t", Simulator::Now ().GetSeconds ());
+  element.AddAttribute ("id", nodeId);
+  element.AddAttribute ("info", routingInfo.c_str (), true);
+  element.CloseElement ();
+  WriteN (element.GetElementString (), m_routingF);
+}
+
+void 
+AnimationInterface::WriteXmlRp (uint32_t nodeId, std::string destination, Ipv4RoutePathElements rpElements)
+{
+  std::string tagName = "rp";
+  AnimXmlElement element (tagName, false);
+  element.AddAttribute ("t", Simulator::Now ().GetSeconds ());
+  element.AddAttribute ("id", nodeId);
+  element.AddAttribute ("d", destination.c_str ());
+  element.AddAttribute ("c", rpElements.size ());
+  element.CloseTag ();
+  element.AddLineBreak ();
+  for (Ipv4RoutePathElements::const_iterator i = rpElements.begin ();
+       i != rpElements.end ();
+       ++i)
+    {
+      Ipv4RoutePathElement rpElement = *i;
+      AnimXmlElement rpeElement ("rpe");
+      rpeElement.AddAttribute ("n", rpElement.nodeId);
+      rpeElement.AddAttribute ("nH", rpElement.nextHop.c_str ());
+      rpeElement.CloseElement ();
+      element.Add (rpeElement);
+    }
+  element.CloseElement ();
+  WriteN (element.GetElementString (),  m_routingF);
+}
+
+
+void 
+AnimationInterface::WriteXmlPRef (uint64_t animUid, uint32_t fId, double fbTx, std::string metaInfo)
+{
+  AnimXmlElement element ("pr");
+  element.AddAttribute ("uId", animUid);
+  element.AddAttribute ("fId", fId);
+  element.AddAttribute ("fbTx", fbTx);
+  if (!metaInfo.empty ())
+    {
+      element.AddAttribute ("meta-info", metaInfo.c_str (), true);
+    }
+  element.CloseElement ();
+  WriteN (element.GetElementString (),  m_f);
+}
+
+void 
+AnimationInterface::WriteXmlP (uint64_t animUid, std::string pktType, uint32_t tId, double fbRx, double lbRx)
+{
+  AnimXmlElement element (pktType);
+  element.AddAttribute ("uId", animUid);
+  element.AddAttribute ("tId", tId);
+  element.AddAttribute ("fbRx", fbRx);
+  element.AddAttribute ("lbRx", lbRx);
+  element.CloseElement ();
+  WriteN (element.GetElementString (),  m_f);
+}
+
+void 
+AnimationInterface::WriteXmlP (std::string pktType, uint32_t fId, double fbTx, double lbTx, 
+                                                   uint32_t tId, double fbRx, double lbRx, std::string metaInfo)
+{
+  AnimXmlElement element (pktType);
+  element.AddAttribute ("fId", fId);
+  element.AddAttribute ("fbTx", fbTx);
+  element.AddAttribute ("lbTx", lbTx);
+  if (!metaInfo.empty ())
+    {
+      element.AddAttribute ("meta-info", metaInfo.c_str (), true);
+    }
+  element.AddAttribute ("tId", tId);
+  element.AddAttribute ("fbRx", fbRx);
+  element.AddAttribute ("lbRx", lbRx);
+  element.CloseElement ();
+  WriteN (element.GetElementString (),  m_f);
+}
+
+void 
+AnimationInterface::WriteXmlAddNodeCounter (uint32_t nodeCounterId, std::string counterName, CounterType counterType)
+{
+  AnimXmlElement element ("ncs");
+  element.AddAttribute ("ncId", nodeCounterId);
+  element.AddAttribute ("n", counterName);
+  element.AddAttribute ("t", CounterTypeToString (counterType));
+  element.CloseElement ();
+  WriteN (element.GetElementString (), m_f);
+}
+
+void 
+AnimationInterface::WriteXmlAddResource (uint32_t resourceId, std::string resourcePath)
+{
+  AnimXmlElement element ("res");
+  element.AddAttribute ("rid", resourceId);
+  element.AddAttribute ("p", resourcePath);
+  element.CloseElement ();
+  WriteN (element.GetElementString (), m_f);
+}
+
+void 
+AnimationInterface::WriteXmlUpdateNodeImage (uint32_t nodeId, uint32_t resourceId)
+{
+  AnimXmlElement element ("nu");
+  element.AddAttribute ("p", "i");
+  element.AddAttribute ("t", Simulator::Now ().GetSeconds ());
+  element.AddAttribute ("id", nodeId);
+  element.AddAttribute ("rid", resourceId);
+  element.CloseElement ();
+  WriteN (element.GetElementString (), m_f);
+}
+
+void 
+AnimationInterface::WriteXmlUpdateNodeSize (uint32_t nodeId, double width, double height)
+{
+  AnimXmlElement element ("nu");
+  element.AddAttribute ("p", "s");
+  element.AddAttribute ("t", Simulator::Now ().GetSeconds ());
+  element.AddAttribute ("id", nodeId);
+  element.AddAttribute ("w", width);
+  element.AddAttribute ("h", height);
+  element.CloseElement ();
+  WriteN (element.GetElementString (),  m_f);
+}
+
+void 
+AnimationInterface::WriteXmlUpdateNodePosition (uint32_t nodeId, double x, double y)
+{
+  AnimXmlElement element ("nu");
+  element.AddAttribute ("p", "p");
+  element.AddAttribute ("t", Simulator::Now ().GetSeconds ());
+  element.AddAttribute ("id", nodeId);
+  element.AddAttribute ("x", x);
+  element.AddAttribute ("y", y);
+  element.CloseElement ();
+  WriteN (element.GetElementString (), m_f);
+}
+
+void 
+AnimationInterface::WriteXmlUpdateNodeColor (uint32_t nodeId, uint8_t r, uint8_t g, uint8_t b)
+{
+  AnimXmlElement element ("nu");
+  element.AddAttribute ("p", "c");
+  element.AddAttribute ("t", Simulator::Now ().GetSeconds ());
+  element.AddAttribute ("id", nodeId);
+  element.AddAttribute ("r", (uint32_t) r);
+  element.AddAttribute ("g", (uint32_t) g);
+  element.AddAttribute ("b", (uint32_t) b);
+  element.CloseElement ();
+  WriteN (element.GetElementString (), m_f);
+}
+
+void 
+AnimationInterface::WriteXmlUpdateNodeDescription (uint32_t nodeId)
+{
+  AnimXmlElement element ("nu");
+  element.AddAttribute ("p", "d");
+  element.AddAttribute ("t", Simulator::Now ().GetSeconds ());
+  element.AddAttribute ("id", nodeId);
+  if (m_nodeDescriptions.find (nodeId) != m_nodeDescriptions.end ())
+    {
+      element.AddAttribute ("descr", m_nodeDescriptions[nodeId], true); 
+    }
+  element.CloseElement ();
+  WriteN (element.GetElementString (), m_f);
+}
+
+
+void 
+AnimationInterface::WriteXmlUpdateNodeCounter (uint32_t nodeCounterId, uint32_t nodeId, double counterValue)
+{
+  AnimXmlElement element ("nc");
+  element.AddAttribute ("c", nodeCounterId);
+  element.AddAttribute ("i", nodeId);
+  element.AddAttribute ("t", Simulator::Now ().GetSeconds ());
+  element.AddAttribute ("v", counterValue);
+  element.CloseElement ();
+  WriteN (element.GetElementString (), m_f);
+}
+
+void 
+AnimationInterface::WriteXmlUpdateBackground (std::string fileName, double x, double y, double scaleX, double scaleY, double opacity)
+{
+  AnimXmlElement element ("bg");
+  element.AddAttribute ("f", fileName);
+  element.AddAttribute ("x", x);
+  element.AddAttribute ("y", y);
+  element.AddAttribute ("sx", scaleX);
+  element.AddAttribute ("sy", scaleY);
+  element.AddAttribute ("o", opacity);
+  element.CloseElement ();
+  WriteN (element.GetElementString (), m_f);
+}
+
+void 
+AnimationInterface::WriteXmlNonP2pLinkProperties (uint32_t id, std::string ipv4Address, std::string channelType)
+{
+  AnimXmlElement element ("nonp2plinkproperties");
+  element.AddAttribute ("id", id);
+  element.AddAttribute ("ipv4Address", ipv4Address);
+  element.AddAttribute ("channelType", channelType);
+  element.CloseElement ();
+  WriteN (element.GetElementString (), m_f);
+}
+
+
+
+/***** AnimXmlElement  *****/
+
+AnimationInterface::AnimXmlElement::AnimXmlElement (std::string tagName, bool emptyElement):
+                                                    m_tagName (tagName),
+                                                    m_emptyElement (emptyElement)
 {
   m_elementString = "<" + tagName + " ";
 }
 
 template <typename T>
 void
-AnimationInterface::AnimXmlElement::AddAttribute (std::string attribute, T value)
+AnimationInterface::AnimXmlElement::AddAttribute (std::string attribute, T value, bool xmlEscape)
 {
   std::ostringstream oss;
   oss << std::setprecision (10);
   oss << value;
   m_elementString += attribute.c_str ();
-  m_elementString += "=\"" + oss.str () + "\" ";
+  if (xmlEscape)
+    {
+      m_elementString += "=\"";
+      std::string valueStr = oss.str ();
+      for (std::string::iterator it = valueStr.begin (); it != valueStr.end (); ++it)
+        {
+          switch (*it)
+            {
+              case '&':
+                m_elementString += "&amp;";
+                break;
+              case '\"':
+                m_elementString += "&quot;";
+                break;
+              case '\'':
+                m_elementString += "&apos;";
+                break;
+              case '<':
+                m_elementString += "&lt;";
+                break;
+              case '>':
+                m_elementString += "&gt;";
+                break;
+              default:
+                m_elementString += *it;
+                break;
+            }
+        }
+      m_elementString += "\" ";
+    }
+  else
+    {
+      m_elementString += "=\"" + oss.str () + "\" ";
+    }
 }
 
 void
 AnimationInterface::AnimXmlElement::Close ()
 {
   m_elementString += ">\n";
+}
+
+void
+AnimationInterface::AnimXmlElement::CloseElement ()
+{
+  if (m_emptyElement)
+    {
+      m_elementString += "/>\n";
+    }
+  else
+   {
+     m_elementString += "</" + m_tagName + ">\n";
+   }
 }
 
 void
@@ -2042,304 +2381,16 @@ AnimationInterface::AnimXmlElement::GetElementString ()
 }
 
 
-void
-AnimationInterface::WriteXmlAnim (bool routing)
-{
-  AnimXmlElement element ("anim");
-  element.AddAttribute ("ver", GetNetAnimVersion ());
-  element.Close ();
-  if (!routing)
-    {
-      WriteN (element.GetElementString (), m_f);
-    }
-  else
-    {
-      WriteN (element.GetElementString (), m_routingF);
-    }
-}
-
-void
-AnimationInterface::WriteXmlClose (std::string name, bool routing)
-{
-  std::string closeString = "</" + name + ">\n";
-  if (!routing)
-    {
-      WriteN (closeString, m_f);
-    }
-  else
-    {
-      WriteN (closeString, m_routingF);
-    }
-}
-
-void
-AnimationInterface::WriteXmlNode (uint32_t id, uint32_t sysId, double locX, double locY)
-{
-  AnimXmlElement element ("node");
-  element.AddAttribute ("id", id);
-  element.AddAttribute ("sysId", sysId);
-  element.AddAttribute ("locX", locX);
-  element.AddAttribute ("locY", locY);
-  element.Close ();
-  WriteN (element.GetElementString (), m_f);
-}
-
-void
-AnimationInterface::WriteXmlUpdateLink (uint32_t fromId, uint32_t toId, std::string linkDescription)
-{
-  AnimXmlElement element ("linkupdate");
-  element.AddAttribute ("t", Simulator::Now ().GetSeconds ());
-  element.AddAttribute ("fromId", fromId);
-  element.AddAttribute ("toId", toId);
-  element.AddAttribute ("ld", linkDescription);
-  element.Close ();
-  WriteN (element.GetElementString (), m_f);
-}
-
-void
-AnimationInterface::WriteXmlLink (uint32_t fromId, uint32_t toLp, uint32_t toId)
-{
-  AnimXmlElement element ("link");
-  element.AddAttribute ("fromId", fromId);
-  element.AddAttribute ("toId", toId);
-
-  LinkProperties lprop ;
-  lprop.fromNodeDescription = "";
-  lprop.toNodeDescription = "";
-  lprop.linkDescription = "";
-
-  P2pLinkNodeIdPair p1 = { fromId, toId };
-  P2pLinkNodeIdPair p2 = { toId, fromId };
-  if (m_linkProperties.find (p1) != m_linkProperties.end ())
-    {
-      lprop = m_linkProperties[p1];
-    }
-  else if (m_linkProperties.find (p2) != m_linkProperties.end ())
-    {
-      lprop = m_linkProperties[p2];
-    }
-
-  element.AddAttribute ("fd", lprop.fromNodeDescription);
-  element.AddAttribute ("td", lprop.toNodeDescription);
-  element.AddAttribute ("ld", lprop.linkDescription);
-  element.Close ();
-  WriteN (element.GetElementString (), m_f);
-}
-
-void
-AnimationInterface::WriteXmlRouting (uint32_t nodeId, std::string routingInfo)
-{
-  AnimXmlElement element ("rt");
-  element.AddAttribute ("t", Simulator::Now ().GetSeconds ());
-  element.AddAttribute ("id", nodeId);
-  element.AddAttribute ("info", routingInfo.c_str ());
-  element.Close ();
-  WriteN (element.GetElementString (), m_routingF);
-}
-
-void
-AnimationInterface::WriteXmlRp (uint32_t nodeId, std::string destination, Ipv4RoutePathElements rpElements)
-{
-  AnimXmlElement element ("rp");
-  element.AddAttribute ("t", Simulator::Now ().GetSeconds ());
-  element.AddAttribute ("id", nodeId);
-  element.AddAttribute ("d", destination.c_str ());
-  element.AddAttribute ("c", rpElements.size ());
-  element.CloseTag ();
-  element.AddLineBreak ();
-  for (Ipv4RoutePathElements::const_iterator i = rpElements.begin ();
-       i != rpElements.end ();
-       ++i)
-    {
-      Ipv4RoutePathElement rpElement = *i;
-      AnimXmlElement rpeElement ("rpe");
-      rpeElement.AddAttribute ("n", rpElement.nodeId);
-      rpeElement.AddAttribute ("nH", rpElement.nextHop.c_str ());
-      rpeElement.Close ();
-      element.Add (rpeElement);
-    }
-  WriteN (element.GetElementString (),  m_routingF);
-}
 
 
-void
-AnimationInterface::WriteXmlPRef (uint64_t animUid, uint32_t fId, double fbTx, double lbTx, std::string metaInfo)
-{
-  AnimXmlElement element ("pr");
-  element.AddAttribute ("uId", animUid);
-  element.AddAttribute ("fId", fId);
-  element.AddAttribute ("fbTx", fbTx);
-  element.AddAttribute ("lbTx", lbTx);
-  if (!metaInfo.empty ())
-    {
-      element.AddAttribute ("meta-info", metaInfo.c_str ());
-    }
-  element.Close ();
-  WriteN (element.GetElementString (),  m_f);
-}
-
-void
-AnimationInterface::WriteXmlP (uint64_t animUid, std::string pktType, uint32_t tId, double fbRx, double lbRx)
-{
-  AnimXmlElement element (pktType);
-  element.AddAttribute ("uId", animUid);
-  element.AddAttribute ("tId", tId);
-  element.AddAttribute ("fbRx", fbRx);
-  element.AddAttribute ("lbRx", lbRx);
-  element.Close ();
-  WriteN (element.GetElementString (),  m_f);
-}
-
-void
-AnimationInterface::WriteXmlP (std::string pktType, uint32_t fId, double fbTx, double lbTx,
-                                                   uint32_t tId, double fbRx, double lbRx, std::string metaInfo)
-{
-  AnimXmlElement element (pktType);
-  element.AddAttribute ("fId", fId);
-  element.AddAttribute ("fbTx", fbTx);
-  element.AddAttribute ("lbTx", lbTx);
-  if (!metaInfo.empty ())
-    {
-      element.AddAttribute ("meta-info", metaInfo.c_str ());
-    }
-  element.AddAttribute ("tId", tId);
-  element.AddAttribute ("fbRx", fbRx);
-  element.AddAttribute ("lbRx", lbRx);
-  element.Close ();
-  WriteN (element.GetElementString (),  m_f);
-}
-
-void
-AnimationInterface::WriteXmlAddNodeCounter (uint32_t nodeCounterId, std::string counterName, CounterType counterType)
-{
-  AnimXmlElement element ("ncs");
-  element.AddAttribute ("ncId", nodeCounterId);
-  element.AddAttribute ("n", counterName);
-  element.AddAttribute ("t", CounterTypeToString (counterType));
-  element.Close ();
-  WriteN (element.GetElementString (), m_f);
-}
-
-void
-AnimationInterface::WriteXmlAddResource (uint32_t resourceId, std::string resourcePath)
-{
-  AnimXmlElement element ("res");
-  element.AddAttribute ("rid", resourceId);
-  element.AddAttribute ("p", resourcePath);
-  element.Close ();
-  WriteN (element.GetElementString (), m_f);
-}
-
-void
-AnimationInterface::WriteXmlUpdateNodeImage (uint32_t nodeId, uint32_t resourceId)
-{
-  AnimXmlElement element ("nu");
-  element.AddAttribute ("p", "i");
-  element.AddAttribute ("t", Simulator::Now ().GetSeconds ());
-  element.AddAttribute ("id", nodeId);
-  element.AddAttribute ("rid", resourceId);
-  element.Close ();
-  WriteN (element.GetElementString (), m_f);
-}
-
-void
-AnimationInterface::WriteXmlUpdateNodeSize (uint32_t nodeId, double width, double height)
-{
-  AnimXmlElement element ("nu");
-  element.AddAttribute ("p", "s");
-  element.AddAttribute ("t", Simulator::Now ().GetSeconds ());
-  element.AddAttribute ("id", nodeId);
-  element.AddAttribute ("w", width);
-  element.AddAttribute ("h", height);
-  element.Close ();
-  WriteN (element.GetElementString (),  m_f);
-}
-
-void
-AnimationInterface::WriteXmlUpdateNodePosition (uint32_t nodeId, double x, double y)
-{
-  AnimXmlElement element ("nu");
-  element.AddAttribute ("p", "p");
-  element.AddAttribute ("t", Simulator::Now ().GetSeconds ());
-  element.AddAttribute ("id", nodeId);
-  element.AddAttribute ("x", x);
-  element.AddAttribute ("y", y);
-  element.Close ();
-  WriteN (element.GetElementString (), m_f);
-}
-
-void
-AnimationInterface::WriteXmlUpdateNodeColor (uint32_t nodeId, uint8_t r, uint8_t g, uint8_t b)
-{
-  AnimXmlElement element ("nu");
-  element.AddAttribute ("p", "c");
-  element.AddAttribute ("t", Simulator::Now ().GetSeconds ());
-  element.AddAttribute ("id", nodeId);
-  element.AddAttribute ("r", (uint32_t) r);
-  element.AddAttribute ("g", (uint32_t) g);
-  element.AddAttribute ("b", (uint32_t) b);
-  element.Close ();
-  WriteN (element.GetElementString (), m_f);
-}
-
-void
-AnimationInterface::WriteXmlUpdateNodeDescription (uint32_t nodeId)
-{
-  AnimXmlElement element ("nu");
-  element.AddAttribute ("p", "d");
-  element.AddAttribute ("t", Simulator::Now ().GetSeconds ());
-  element.AddAttribute ("id", nodeId);
-  if (m_nodeDescriptions.find (nodeId) != m_nodeDescriptions.end ())
-    {
-      element.AddAttribute ("descr", m_nodeDescriptions[nodeId]);
-    }
-  element.Close ();
-  WriteN (element.GetElementString (), m_f);
-}
-
-
-void
-AnimationInterface::WriteXmlUpdateNodeCounter (uint32_t nodeCounterId, uint32_t nodeId, double counterValue)
-{
-  AnimXmlElement element ("nc");
-  element.AddAttribute ("c", nodeCounterId);
-  element.AddAttribute ("i", nodeId);
-  element.AddAttribute ("t", Simulator::Now ().GetSeconds ());
-  element.AddAttribute ("v", counterValue);
-  element.Close ();
-  WriteN (element.GetElementString (), m_f);
-}
-
-void
-AnimationInterface::WriteXmlUpdateBackground (std::string fileName, double x, double y, double scaleX, double scaleY, double opacity)
-{
-  AnimXmlElement element ("bg");
-  element.AddAttribute ("f", fileName);
-  element.AddAttribute ("x", x);
-  element.AddAttribute ("y", y);
-  element.AddAttribute ("sx", scaleX);
-  element.AddAttribute ("sy", scaleY);
-  element.AddAttribute ("o", opacity);
-  element.Close ();
-  WriteN (element.GetElementString (), m_f);
-}
-
-void
-AnimationInterface::WriteXmlNonP2pLinkProperties (uint32_t id, std::string ipv4Address, std::string channelType)
-{
-  AnimXmlElement element ("nonp2plinkproperties");
-  element.AddAttribute ("id", id);
-  element.AddAttribute ("ipv4Address", ipv4Address);
-  element.AddAttribute ("channelType", channelType);
-  element.Close ();
-  WriteN (element.GetElementString (), m_f);
-}
+/***** AnimByteTag *****/
 
 TypeId
 AnimByteTag::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::AnimByteTag")
     .SetParent<Tag> ()
+    .SetGroupName ("NetAnim")
     .AddConstructor<AnimByteTag> ()
   ;
   return tid;
@@ -2388,12 +2439,11 @@ AnimByteTag::Get (void) const
 }
 
 AnimationInterface::AnimPacketInfo::AnimPacketInfo ()
-  : m_txnd (0),
+  : m_txnd (0), 
     m_txNodeId (0),
-    m_fbTx (0),
-    m_lbTx (0),
-    m_txLoc (Vector (0,0,0)),
-    m_firstLastBitDelta (0)
+    m_fbTx (0), 
+    m_lbTx (0), 
+    m_lbRx (0)
 {
 }
 
@@ -2403,84 +2453,28 @@ AnimationInterface::AnimPacketInfo::AnimPacketInfo (const AnimPacketInfo & pInfo
   m_txNodeId = pInfo.m_txNodeId;
   m_fbTx = pInfo.m_fbTx;
   m_lbTx = pInfo.m_lbTx;
-  m_txLoc = pInfo.m_txLoc;
-  m_firstLastBitDelta = pInfo.m_firstLastBitDelta;
+  m_lbRx = pInfo.m_lbRx;
 }
 
-AnimationInterface::AnimPacketInfo::AnimPacketInfo (Ptr <const NetDevice> txnd,
-                                const Time fbTx,
-                                const Time lbTx,
-                                Vector txLoc,
+AnimationInterface::AnimPacketInfo::AnimPacketInfo (Ptr <const NetDevice> txnd, 
+                                const Time fbTx, 
                                 uint32_t txNodeId)
-  : m_txnd (txnd),
+  : m_txnd (txnd), 
     m_txNodeId (0),
-    m_fbTx (fbTx.GetSeconds ()),
-    m_lbTx (lbTx.GetSeconds ()),
-    m_txLoc (txLoc),
-    m_firstLastBitDelta (0)
+    m_fbTx (fbTx.GetSeconds ()), 
+    m_lbTx (0), 
+    m_lbRx (0)
 {
   if (!m_txnd)
     m_txNodeId = txNodeId;
 }
 
-void
-AnimationInterface::AnimPacketInfo::ProcessRxBegin (Ptr<const NetDevice> nd, const Time fbRx)
+void 
+AnimationInterface::AnimPacketInfo::ProcessRxBegin (Ptr<const NetDevice> nd, const double fbRx)
 {
-  m_rx[nd->GetNode ()->GetId ()] = AnimRxInfo (fbRx, nd, 0);
-}
-
-bool
-AnimationInterface::AnimPacketInfo::ProcessRxEnd (Ptr<const NetDevice> nd, const Time lbRx, Vector rxLoc)
-{
-  uint32_t NodeId = nd->GetNode ()->GetId ();
-  // Find the RxInfo
-  if (m_rx.find (NodeId) == m_rx.end ())
-    {
-      return false;
-    }
-  AnimRxInfo& rxInfo = m_rx[NodeId];
-  // Check if the NetDevice matches. A node may have several NetDevices
-  if (rxInfo.m_rxnd != nd)
-    {
-      return false;
-    }
-  rxInfo.rxRange = CalculateDistance (m_txLoc, rxLoc);
-  rxInfo.m_lbRx = lbRx.GetSeconds ();
-  rxInfo.SetPhyRxComplete ();
-  m_firstLastBitDelta = rxInfo.m_lbRx - rxInfo.m_fbRx;
-  return true;
-}
-
-AnimationInterface::AnimRxInfo
-AnimationInterface::AnimPacketInfo::GetRxInfo (Ptr<const NetDevice> nd)
-{
-  uint32_t NodeId = nd->GetNode ()->GetId ();
-  NS_ASSERT (m_rx.find (NodeId) != m_rx.end ());
-  return m_rx[NodeId];
-}
-
-void
-AnimationInterface::AnimPacketInfo::RemoveRxInfo (Ptr<const NetDevice> nd)
-{
-  uint32_t NodeId = nd->GetNode ()->GetId ();
-  m_rx.erase (m_rx.find (NodeId));
-}
-
-void
-AnimationInterface::AnimPacketInfo::ProcessRxDrop (Ptr<const NetDevice> nd)
-{
-}
-
-bool
-AnimationInterface::AnimRxInfo::IsPhyRxComplete ()
-{
-  return m_PhyRxComplete;
-}
-
-void
-AnimationInterface::AnimRxInfo::SetPhyRxComplete ()
-{
-  m_PhyRxComplete = true;
+  Ptr <Node> n = nd->GetNode ();
+  m_fbRx = fbRx;
+  m_rxnd = nd;
 }
 
 } // namespace ns3

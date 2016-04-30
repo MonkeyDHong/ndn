@@ -47,6 +47,7 @@ TopologyReaderHelper::SetFileType (const std::string fileType)
   m_fileType = fileType;
 }
 
+
 Ptr<TopologyReader>
 TopologyReaderHelper::GetTopologyReader ()
 {
@@ -58,17 +59,17 @@ TopologyReaderHelper::GetTopologyReader ()
       if (m_fileType == "Orbis")
         {
           NS_LOG_INFO ("Creating Orbis formatted data input.");
-          m_inputModel = Create<OrbisTopologyReader> ();
+          m_inputModel = CreateObject<OrbisTopologyReader> ();
         }
       else if (m_fileType == "Inet")
         {
           NS_LOG_INFO ("Creating Inet formatted data input.");
-          m_inputModel = Create<InetTopologyReader> ();
+          m_inputModel = CreateObject<InetTopologyReader> ();
         }
       else if (m_fileType == "Rocketfuel")
         {
           NS_LOG_INFO ("Creating Rocketfuel formatted data input.");
-          m_inputModel = Create<RocketfuelTopologyReader> ();
+          m_inputModel = CreateObject<RocketfuelTopologyReader> ();
         }
       else
         {

@@ -28,19 +28,21 @@
 #include "inet-topology-reader.h"
 
 
-NS_LOG_COMPONENT_DEFINE ("InetTopologyReader");
-
 namespace ns3 {
 
-// NS_OBJECT_ENSURE_REGISTERED (InetTopologyReader);
+NS_LOG_COMPONENT_DEFINE ("InetTopologyReader");
 
-// TypeId InetTopologyReader::GetTypeId (void)
-// {
-//   static TypeId tid = TypeId ("ns3::InetTopologyReader")
-//     .SetParent<Object> ()
-//   ;
-//   return tid;
-// }
+NS_OBJECT_ENSURE_REGISTERED (InetTopologyReader);
+
+TypeId InetTopologyReader::GetTypeId (void)
+{
+  static TypeId tid = TypeId ("ns3::InetTopologyReader")
+    .SetParent<TopologyReader> ()
+    .SetGroupName ("TopologyReader")
+    .AddConstructor<InetTopologyReader> ()
+  ;
+  return tid;
+}
 
 InetTopologyReader::InetTopologyReader ()
 {

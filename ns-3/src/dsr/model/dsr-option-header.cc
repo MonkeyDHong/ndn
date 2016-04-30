@@ -39,8 +39,10 @@
 #include "ns3/enum.h"
 
 namespace ns3 {
-namespace dsr {
+
 NS_LOG_COMPONENT_DEFINE ("DsrOptionHeader");
+
+namespace dsr {
 
 NS_OBJECT_ENSURE_REGISTERED (DsrOptionHeader);
 
@@ -49,6 +51,7 @@ TypeId DsrOptionHeader::GetTypeId ()
   static TypeId tid = TypeId ("ns3::dsr::DsrOptionHeader")
     .AddConstructor<DsrOptionHeader> ()
     .SetParent<Header> ()
+    .SetGroupName ("Dsr")
   ;
   return tid;
 }
@@ -137,6 +140,7 @@ TypeId DsrOptionPad1Header::GetTypeId ()
   static TypeId tid = TypeId ("ns3::dsr::DsrOptionPad1Header")
     .AddConstructor<DsrOptionPad1Header> ()
     .SetParent<DsrOptionHeader> ()
+    .SetGroupName ("Dsr")
   ;
   return tid;
 }
@@ -188,6 +192,7 @@ TypeId DsrOptionPadnHeader::GetTypeId ()
   static TypeId tid = TypeId ("ns3::dsr::DsrOptionPadnHeader")
     .AddConstructor<DsrOptionPadnHeader> ()
     .SetParent<DsrOptionHeader> ()
+    .SetGroupName ("Dsr")
   ;
   return tid;
 }
@@ -248,6 +253,7 @@ TypeId DsrOptionRreqHeader::GetTypeId ()
   static TypeId tid = TypeId ("ns3::dsr::DsrOptionRreqHeader")
     .AddConstructor<DsrOptionRreqHeader> ()
     .SetParent<DsrOptionHeader> ()
+    .SetGroupName ("Dsr")
   ;
   return tid;
 }
@@ -271,7 +277,7 @@ DsrOptionRreqHeader::~DsrOptionRreqHeader ()
 void DsrOptionRreqHeader::SetNumberAddress (uint8_t n)
 {
   m_ipv4Address.clear ();
-  m_ipv4Address.assign (n, Ipv4Address (""));
+  m_ipv4Address.assign (n, Ipv4Address ());
 }
 
 Ipv4Address DsrOptionRreqHeader::GetTarget ()
@@ -395,6 +401,7 @@ TypeId DsrOptionRrepHeader::GetTypeId ()
   static TypeId tid = TypeId ("ns3::dsr::DsrOptionRrepHeader")
     .AddConstructor<DsrOptionRrepHeader> ()
     .SetParent<DsrOptionHeader> ()
+    .SetGroupName ("Dsr")
   ;
   return tid;
 }
@@ -418,7 +425,7 @@ DsrOptionRrepHeader::~DsrOptionRrepHeader ()
 void DsrOptionRrepHeader::SetNumberAddress (uint8_t n)
 {
   m_ipv4Address.clear ();
-  m_ipv4Address.assign (n, Ipv4Address (""));
+  m_ipv4Address.assign (n, Ipv4Address ());
 }
 
 void DsrOptionRrepHeader::SetNodesAddress (std::vector<Ipv4Address> ipv4Address)
@@ -516,6 +523,7 @@ TypeId DsrOptionSRHeader::GetTypeId ()
   static TypeId tid = TypeId ("ns3::dsr::DsrOptionSRHeader")
     .AddConstructor<DsrOptionSRHeader> ()
     .SetParent<DsrOptionHeader> ()
+    .SetGroupName ("Dsr")
   ;
   return tid;
 }
@@ -560,7 +568,7 @@ uint8_t DsrOptionSRHeader::GetSalvage () const
 void DsrOptionSRHeader::SetNumberAddress (uint8_t n)
 {
   m_ipv4Address.clear ();
-  m_ipv4Address.assign (n, Ipv4Address (""));
+  m_ipv4Address.assign (n, Ipv4Address ());
 }
 
 void DsrOptionSRHeader::SetNodesAddress (std::vector<Ipv4Address> ipv4Address)
@@ -658,6 +666,7 @@ TypeId DsrOptionRerrHeader::GetTypeId ()
   static TypeId tid = TypeId ("ns3::dsr::DsrOptionRerrHeader")
     .AddConstructor<DsrOptionRerrHeader> ()
     .SetParent<DsrOptionHeader> ()
+    .SetGroupName ("Dsr")
   ;
   return tid;
 }
@@ -780,6 +789,7 @@ TypeId DsrOptionRerrUnreachHeader::GetTypeId ()
   static TypeId tid = TypeId ("ns3::dsr::DsrOptionRerrUnreachHeader")
     .AddConstructor<DsrOptionRerrUnreachHeader> ()
     .SetParent<DsrOptionRerrHeader> ()
+    .SetGroupName ("Dsr")
   ;
   return tid;
 }
@@ -908,6 +918,7 @@ TypeId DsrOptionRerrUnsupportHeader::GetTypeId ()
   static TypeId tid = TypeId ("ns3::dsr::DsrOptionRerrUnsupportHeader")
     .AddConstructor<DsrOptionRerrUnsupportHeader> ()
     .SetParent<DsrOptionRerrHeader> ()
+    .SetGroupName ("Dsr")
   ;
   return tid;
 }
@@ -1026,6 +1037,7 @@ TypeId DsrOptionAckReqHeader::GetTypeId ()
   static TypeId tid = TypeId ("ns3::dsr::DsrOptionAckReqHeader")
     .AddConstructor<DsrOptionAckReqHeader> ()
     .SetParent<DsrOptionHeader> ()
+    .SetGroupName ("Dsr")
   ;
   return tid;
 }
@@ -1101,6 +1113,7 @@ TypeId DsrOptionAckHeader::GetTypeId ()
   static TypeId tid = TypeId ("ns3::dsr::DsrOptionAckHeader")
     .AddConstructor<DsrOptionAckHeader> ()
     .SetParent<DsrOptionHeader> ()
+    .SetGroupName ("Dsr")
   ;
   return tid;
 }

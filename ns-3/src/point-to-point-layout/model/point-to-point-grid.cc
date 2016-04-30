@@ -25,9 +25,9 @@
 #include "ns3/log.h"
 #include "ns3/ipv6-address-generator.h"
 
-NS_LOG_COMPONENT_DEFINE ("PointToPointGridHelper");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("PointToPointGridHelper");
 
 PointToPointGridHelper::PointToPointGridHelper (uint32_t nRows, 
                                                 uint32_t nCols, 
@@ -217,7 +217,7 @@ PointToPointGridHelper::BoundingBox (double ulx, double uly,
               loc = CreateObject<ConstantPositionMobilityModel> ();
               node->AggregateObject (loc);
             }
-          Vector locVec (ulx + xLoc, uly + yLoc, 0);
+          Vector locVec (xLoc, yLoc, 0);
           loc->SetPosition (locVec);
 
           xLoc += xAdder;
