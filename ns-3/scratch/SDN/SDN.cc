@@ -49,7 +49,7 @@ VanetSim::VanetSim()
 	TX_Routing_Pkts = 0;
 	m_port = 65419;
 	homepath = getenv("HOME");
-	folder="SDN";
+	folder="SDN/3roads/v";
 }
 
 VanetSim::~VanetSim()
@@ -107,9 +107,21 @@ void VanetSim::LoadTraffic()
 	{
 		std::cout<<"Mode: OLSR-N"<<std::endl;
 	}
-	else
+	else if(mod==1)
 	{
 		std::cout<<"Mode: SDN"<<std::endl;
+	}
+	else if(mod==2)
+	{
+		std::cout<<"Mode: AODV"<<std::endl;
+	}
+	else if(mod==3)
+	{
+		std::cout<<"Mode: DSR"<<std::endl;
+	}
+	else if(mod==4)
+	{
+		std::cout<<"Mode: DSDV"<<std::endl;
 	}
 	DIR* dir = NULL;
 	//DIR* subdir=NULL;
@@ -120,8 +132,8 @@ void VanetSim::LoadTraffic()
 
 
 	std::string sumo_net = temp + "/input.net.xml";
-	std::string sumo_route = temp + "/input.rou.xml";
-	std::string sumo_fcd = temp + "/input.fcd.xml";
+	std::string sumo_fcd = temp + "/fcd.xml";
+	std::string sumo_route = temp + "/rou.xml";
 
 	std::string output = temp + "/result.txt";
 
@@ -137,7 +149,8 @@ void VanetSim::LoadTraffic()
 
 void VanetSim::ConfigNode()
 {
-	m_nodes.Create(nodeNum+3);//Cars + Controller + Source + Sink
+	m_nodes.Create(nodeNum+4);//Cars + 2Controller + Source + Sink
+	//std::cout<<nodeNum<<std::endl;
 	/*Only Apps Are Different Between Different kind of Nodes*/
 	// Name nodes
 	for (uint32_t i = 0; i < nodeNum; ++i)
@@ -146,14 +159,16 @@ void VanetSim::ConfigNode()
 		os << "vehicle-" << i;
 		Names::Add(os.str(), m_nodes.Get(i));
 	}
-	Names::Add("Controller",m_nodes.Get(nodeNum));
+	Names::Add("Controller_1",m_nodes.Get(nodeNum));
 	Names::Add("Source",m_nodes.Get(nodeNum+1));
 	Names::Add("Sink",m_nodes.Get(nodeNum+2));
+	Names::Add("Controller_2",m_nodes.Get(nodeNum+3));
 }
 
 void VanetSim::ConfigChannels()
 {
 	//===channel
+	std::cout<<"ConfigChannels"<<std::endl;
 	YansWifiChannelHelper SCHChannel;
 	SCHChannel.SetPropagationDelay ("ns3::ConstantSpeedPropagationDelayModel");
 	if (pmod == 1)
@@ -240,11 +255,13 @@ void VanetSim::ConfigMobility()
 	}
 	Time temp_now = Simulator::Now();
 	std::cout<<"Now?"<<temp_now.GetSeconds ()<<std::endl;
-	Ptr<MobilityModel> Temp = m_nodes.Get(nodeNum)->GetObject<MobilityModel>();//Controller
+	Ptr<MobilityModel> Temp = m_nodes.Get(nodeNum)->GetObject<MobilityModel>();//Controller1
 	Temp->SetPosition(Vector(0.0, 0.0, 0.0));
 	Temp = m_nodes.Get(nodeNum+1)->GetObject<MobilityModel>();//source
 	Temp->SetPosition(Vector(5.1, 0.0, 0.0));
 	Temp = m_nodes.Get(nodeNum+2)->GetObject<MobilityModel>();//Sink
+	Temp->SetPosition(Vector(2000.0, 0.0, 0.0));
+        Temp = m_nodes.Get(nodeNum+3)->GetObject<MobilityModel>();//Controller2
 	Temp->SetPosition(Vector(1000.0, 0.0, 0.0));
 }
 
@@ -252,13 +269,37 @@ void VanetSim::ConfigApp()
 {
 	//===Routing
 	InternetStackHelper internet;
-	if (mod != 1)
+	if (mod == 0)
 	{
 		OlsrHelper olsr;
 		//Ipv4ListRoutingHelper list;
 		//list.Add(olsr,100);
 		internet.SetRoutingHelper(olsr);
 		std::cout<<"OLSR"<<std::endl;
+		internet.Install (m_nodes);
+	}
+        else if (mod == 2)
+	{
+		AodvHelper aodv;
+		internet.SetRoutingHelper(aodv);
+		std::cout<<"AODV"<<std::endl;
+		internet.Install (m_nodes);
+	}
+        else if (mod == 3)
+	{
+		DsrHelper dsr;
+		//internet.SetRoutingHelper(dsr);
+		DsrMainHelper dsrMain;
+		std::cout<<"DSR"<<std::endl;
+		internet.Install (m_nodes);
+        	dsrMain.Install (dsr, m_nodes);
+	}
+        else if (mod == 4)
+	{
+		DsdvHelper dsdv;
+		internet.SetRoutingHelper(dsdv);
+		std::cout<<"DSDV"<<std::endl;
+		internet.Install (m_nodes);
 	}
 	else
 	{
@@ -268,18 +309,20 @@ void VanetSim::ConfigApp()
 	      sdn.SetNodeTypeMap (m_nodes.Get (i), sdn::CAR);
 	    }
 	  sdn.SetNodeTypeMap (m_nodes.Get (nodeNum), sdn::LOCAL_CONTROLLER);
+          sdn.SetNodeTypeMap (m_nodes.Get (nodeNum+3), sdn::LOCAL_CONTROLLER);
 	  sdn.ExcludeInterface (m_nodes.Get (nodeNum), 0);
 	  sdn.SetNodeTypeMap (m_nodes.Get (nodeNum+1), sdn::CAR);//Treat Source and Sink as CAR
 	  sdn.SetNodeTypeMap (m_nodes.Get (nodeNum+2), sdn::CAR);
 	  sdn.SetRLnSR (range1, range2);
 	  internet.SetRoutingHelper(sdn);
 		std::cout<<"SetRoutingHelper Done"<<std::endl;
+	  internet.Install (m_nodes);
 	}
-	internet.Install (m_nodes);
+	
 
 	std::cout<<"internet.Install Done"<<std::endl;
-
 	//===IP ADDRESS
+
 	Ipv4AddressHelper ipv4S;
 	NS_LOG_INFO ("Assign IP Addresses.");
 	ipv4S.SetBase ("10.1.1.0", "255.255.255.0");//SCH
@@ -308,19 +351,19 @@ void VanetSim::ConfigApp()
 	//source
 
 	//onoff
-	std::pair<Ptr<Ipv4>, uint32_t> RetValue = m_SCHInterfaces.Get (nodeNum+1);
+	/*std::pair<Ptr<Ipv4>, uint32_t> RetValue = m_SCHInterfaces.Get (nodeNum+1);
 	Ipv4InterfaceAddress theinterface = RetValue.first->GetAddress (RetValue.second, 0);
-  Ipv4Address bcast = theinterface.GetLocal ().GetSubnetDirectedBroadcast (theinterface.GetMask ());
-	Address remote (InetSocketAddress(bcast, m_port));
+  Ipv4Address bcast = theinterface.GetLocal ().GetSubnetDirectedBroadcast (theinterface.GetMask ());*/
+	Address remote (InetSocketAddress(m_SCHInterfaces.GetAddress(nodeNum+2), m_port));
 	OnOffHelper Source("ns3::UdpSocketFactory",remote);//SendToSink
 	Source.SetAttribute("OffTime",StringValue ("ns3::ConstantRandomVariable[Constant=0.0]"));
 
 
-	m_source = Source.Install(m_nodes.Get(nodeNum+1));//Insatll on Source
+	m_source = Source.Install(m_nodes.Get(nodeNum+1));//Install on Source
 	m_source.Stop(Seconds(duration));//Default Start time is 0.
 
 	Config::ConnectWithoutContext (
-	    "/NodeList/51/ApplicationList/0/$ns3::OnOffApplication/Tx",
+	    "/NodeList/76/ApplicationList/0/$ns3::OnOffApplication/Tx",
 	    MakeCallback(&VanetSim::TXTrace, this));
 	/*
 	TypeId tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
@@ -330,8 +373,9 @@ void VanetSim::ConfigApp()
 
 	//sink
 	TypeId tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
-	Ptr<Socket> sink = Socket::CreateSocket (m_nodes.Get(52), tid);//The Sink
+	Ptr<Socket> sink = Socket::CreateSocket (m_nodes.Get(nodeNum+2), tid);//The Sink
   //HearALL;
+	//InetSocketAddress local = InetSocketAddress(m_CCHInterfaces.GetAddress(nodeNum+2),m_port);
 	InetSocketAddress local = InetSocketAddress(Ipv4Address::GetZero (),m_port);
 	sink->Bind(local);
 	sink->SetRecvCallback(MakeCallback(&VanetSim::ReceiveDataPacket, this));
@@ -426,6 +470,7 @@ int main (int argc, char *argv[])
 	SDN_test.Simulate(argc, argv);
 	return 0;
 }
+
 
 
 

@@ -27,11 +27,13 @@
 
 #define IPV4_ADDRESS_SIZE 4
 #define SDN_PKT_HEADER_SIZE 8
-#define SDN_MSG_HEADER_SIZE 8
+#define SDN_MSG_HEADER_SIZE 12
 #define SDN_HELLO_HEADER_SIZE 28
 #define SDN_RM_HEADER_SIZE 16
 #define SDN_RM_TUPLE_SIZE 3
 #define SDN_APPOINTMENT_HEADER_SIZE 12
+#define SDN_CRREQ_HEADER_SIZE 8
+#define SDN_CRREP_HEADER_SIZE 12
 
 NS_LOG_COMPONENT_DEFINE ("SdnHeader");
 
@@ -171,6 +173,16 @@ MessageHeader::GetSerializedSize (void) const
     case APPOINTMENT_MESSAGE:
       size += m_message.appointment.GetSerializedSize ();
       break;
+    case CARROUTEREQUEST_MESSAGE:
+      size += m_message.crreq.GetSerializedSize ();
+      break;
+    case CARROUTERESPONCE_MESSAGE:
+      size += m_message.crrep.GetSerializedSize ();
+      break;
+    //todo
+    //case CARROUTERESPONCE_MESSAGE:
+      //size += m_message.appointment.GetSerializedSize ();
+      //break;
     default:
       NS_ASSERT (false);
     }
@@ -187,6 +199,7 @@ void
 MessageHeader::Serialize (Buffer::Iterator start) const
 {
   Buffer::Iterator i = start;
+  i.WriteHtonU32 (GetOriginatorAddress().Get());
   i.WriteU8 (m_messageType);
   i.WriteU8 (m_vTime);
   i.WriteHtonU16 (GetSerializedSize ());
@@ -204,6 +217,13 @@ MessageHeader::Serialize (Buffer::Iterator start) const
     case APPOINTMENT_MESSAGE:
       m_message.appointment.Serialize (i);
       break;
+    case CARROUTEREQUEST_MESSAGE:
+      m_message.crreq.Serialize (i);
+      break;
+    case CARROUTERESPONCE_MESSAGE:
+      m_message.crrep.Serialize (i);
+      break;
+    //todo
     default:
       NS_ASSERT (false);
     }
@@ -215,8 +235,10 @@ MessageHeader::Deserialize (Buffer::Iterator start)
 {
   uint32_t size;
   Buffer::Iterator i = start;
+  uint32_t add_temp = i.ReadNtohU32();
+  SetOriginatorAddress(Ipv4Address(add_temp));
   m_messageType  = (MessageType) i.ReadU8 ();
-  NS_ASSERT (m_messageType >= HELLO_MESSAGE && m_messageType <= APPOINTMENT_MESSAGE);
+  NS_ASSERT (m_messageType >= HELLO_MESSAGE && m_messageType <= CARROUTERESPONCE_MESSAGE);//todo
   m_vTime  = i.ReadU8 ();
   m_messageSize  = i.ReadNtohU16 ();
   m_timeToLive  = i.ReadNtohU16 ();
@@ -236,6 +258,15 @@ MessageHeader::Deserialize (Buffer::Iterator start)
       size +=
         m_message.appointment.Deserialize (i, m_messageSize - SDN_MSG_HEADER_SIZE);
       break;
+    case CARROUTEREQUEST_MESSAGE:
+      size +=
+        m_message.crreq.Deserialize (i, m_messageSize - SDN_MSG_HEADER_SIZE);
+      break;
+    case CARROUTERESPONCE_MESSAGE:
+      size +=
+        m_message.crrep.Deserialize (i, m_messageSize - SDN_MSG_HEADER_SIZE);
+      break;
+    //todo
     default:
       NS_ASSERT (false);
     }
@@ -404,6 +435,80 @@ MessageHeader::Appointment::Deserialize (Buffer::Iterator start, uint32_t messag
   this->NextForwarder.Set (ip_temp);
   return (messageSize);
 }
+
+
+// ---------------- SDN CARROUTEREQUEST Message -------------------------------
+
+void
+MessageHeader::CRREQ::Print (std::ostream &os) const
+{
+  //TODO
+}
+
+uint32_t
+MessageHeader::CRREQ::GetSerializedSize () const
+{
+  return SDN_CRREQ_HEADER_SIZE;
+}
+
+void
+MessageHeader::CRREQ::Serialize (Buffer::Iterator start) const
+{
+  Buffer::Iterator i = start;
+
+  i.WriteHtonU32 (this->sourceAddress.Get());
+  i.WriteHtonU32 (this->destAddress.Get());
+}
+
+uint32_t
+MessageHeader::CRREQ::Deserialize (Buffer::Iterator start, uint32_t messageSize)
+{
+  Buffer::Iterator i = start;
+
+  uint32_t ip_temp = i.ReadNtohU32();
+  this->sourceAddress.Set (ip_temp);
+  ip_temp = i.ReadNtohU32();
+  this->destAddress.Set (ip_temp);
+  return (messageSize);
+}
+// ---------------- SDN CARROUTERESPONCE Message -------------------------------
+
+void
+MessageHeader::CRREP::Print (std::ostream &os) const
+{
+  //TODO
+}
+
+uint32_t
+MessageHeader::CRREP::GetSerializedSize () const
+{
+  return SDN_CRREP_HEADER_SIZE;
+}
+
+void
+MessageHeader::CRREP::Serialize (Buffer::Iterator start) const
+{
+  Buffer::Iterator i = start;
+
+  i.WriteHtonU32 (this->sourceAddress.Get());
+  i.WriteHtonU32 (this->destAddress.Get());
+  i.WriteHtonU32 (this->transferAddress.Get());
+}
+
+uint32_t
+MessageHeader::CRREP::Deserialize (Buffer::Iterator start, uint32_t messageSize)
+{
+  Buffer::Iterator i = start;
+
+  uint32_t ip_temp = i.ReadNtohU32();
+  this->sourceAddress.Set (ip_temp);
+  ip_temp = i.ReadNtohU32();
+  this->destAddress.Set (ip_temp);
+  ip_temp = i.ReadNtohU32();
+  this->transferAddress.Set (ip_temp);
+  return (messageSize);
+}
+
 
 }
 }  // namespace sdn, ns3

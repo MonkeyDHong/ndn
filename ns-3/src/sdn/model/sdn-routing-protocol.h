@@ -253,20 +253,27 @@ private:
   void SendHello ();//implemented
   void SendRoutingMessage (); //Fullfilled
   void SendAppointment();
-
+  void SendCRREQ(const Ipv4Address &destAddress);
+  void SendCRREP(const Ipv4Address &sourceAddress,const Ipv4Address &destAddress,const Ipv4Address &transferAddress);
   void ProcessAppointment (const sdn::MessageHeader &msg);
   void ProcessRm (const sdn::MessageHeader &msg);//implemented
-  void ProcessHM (const sdn::MessageHeader &msg); //implemented
-
+  void ProcessHM (const sdn::MessageHeader &msg,const Ipv4Address &senderIface); //implemented
+  void ProcessCRREQ (const sdn::MessageHeader &msg);
+  void ProcessCRREP (const sdn::MessageHeader &msg);
   void ComputeRoute ();//
 
   /// Check that address is one of my interfaces
   bool IsMyOwnAddress (const Ipv4Address & a) const;//implemented
 
 private:
-  Ipv4Address m_mainAddress;
+  Ipv4Address m_SCHmainAddress;
+  Ipv4Address m_CCHmainAddress;
   uint32_t m_SCHinterface;
   uint32_t m_CCHinterface;
+  std::map<Ipv4Address, Ipv4Address> m_SCHaddr2CCHaddr;
+  Ipv4Address transferAddress;//now it is the nearest ip
+  Ipv4Address roadendAddress;
+  //std::map<Ipv4Address, Ipv4Address> m_SCHaddr2IfaceAddr;
   // One socket per interface, each bound to that interface's address
   // (reason: for VANET-SDN we need to distinguish CCH and SCH interfaces)
   std::map< Ptr<Socket>, Ipv4InterfaceAddress > m_socketAddresses;
@@ -304,6 +311,16 @@ private:
                    const Ipv4Address& dest,
                    const Ipv4Address& mask,
                    const Ipv4Address& next);
+  void LCAddEntry (const Ipv4Address& ID,
+                   const Ipv4Address &dest,
+                   const Ipv4Address &mask,
+                   const Ipv4Address &next,
+                   const Ipv4Address &interfaceAddress);
+  void LCAddEntry (const Ipv4Address& ID,
+                   const Ipv4Address &dest,
+                   const Ipv4Address &mask,
+                   const Ipv4Address &next,
+                   uint32_t interface);
   void ClearAllTables ();
 
   int GetArea (Vector3D position) const;
